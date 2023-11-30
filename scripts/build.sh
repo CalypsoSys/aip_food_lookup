@@ -8,7 +8,18 @@ CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ./docker/aip_food_loo
 cd ./docker
 sudo docker build -t aip_food_lookup .
 
+sudo docker rmi -f $(sudo docker images -f "dangling=true" -q)
+sudo docker save aip_food_lookup > ~/aip_food_lookup.tar
+
 #sudo docker run -p 8080:8080 aip_food_lookup
 
 #curl http://localhost:8080
 
+#1. copy aip_food_lookup.tar /home/calypso/docker
+#2. cd /home/calypso/docker/aip_food_lookup_go
+#3. sudo docker-compose down
+#4. cd /home/calypso/docker/
+#5. sudo docker load < aip_food_lookup.tar
+#6. sudo docker rmi -f $(sudo docker images -f "dangling=true" -q)
+#7. cd /home/calypso/docker/aip_food_lookup_go
+#9. docker-compose up -d
