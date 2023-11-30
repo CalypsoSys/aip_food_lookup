@@ -4,11 +4,11 @@ services:
   aip_food_lookup:
     image: aip_food_lookup:latest
     expose:
-      - 80
+      - 8080
     restart: always
     environment:
-      VIRTUAL_HOST: api.hashimojoe.com.com
-      LETSENCRYPT_HOST: api.hashimojoe.com.com
+      VIRTUAL_HOST: api.hashimojoe.com
+      LETSENCRYPT_HOST: api.hashimojoe.com
       LETSENCRYPT_EMAIL: calypsosystemsllc@gmail.com
     container_name: aip_food_lookup
 volumes:

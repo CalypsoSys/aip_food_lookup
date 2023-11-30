@@ -9,7 +9,8 @@ cd ./docker
 sudo docker build -t aip_food_lookup .
 
 sudo docker rmi -f $(sudo docker images -f "dangling=true" -q)
-sudo docker save aip_food_lookup > ~/aip_food_lookup.tar
+sudo docker save aip_food_lookup > aip_food_lookup.tar
+cp aip_food_lookup.tar /mnt/c/transfer/.
 
 #sudo docker run -p 8080:8080 aip_food_lookup
 
@@ -22,4 +23,4 @@ sudo docker save aip_food_lookup > ~/aip_food_lookup.tar
 #5. sudo docker load < aip_food_lookup.tar
 #6. sudo docker rmi -f $(sudo docker images -f "dangling=true" -q)
 #7. cd /home/calypso/docker/aip_food_lookup_go
-#9. docker-compose up -d
+#9. sudo docker-compose up -d
