@@ -4,11 +4,11 @@ services:
   aip_food_lookup:
     image: aip_food_lookup:latest
     expose:
-      - 80
+      - 8080
     restart: always
     environment:
-      VIRTUAL_HOST: ${AIP_FOOD_LOOKUP_HOST}.com
-      LETSENCRYPT_HOST: ${AIP_FOOD_LOOKUP_HOST}.com
+      VIRTUAL_HOST: ${AIP_FOOD_LOOKUP_HOST}
+      LETSENCRYPT_HOST: ${AIP_FOOD_LOOKUP_HOST}
       LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
     container_name: aip_food_lookup
 volumes:
