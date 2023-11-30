@@ -2,7 +2,7 @@
 FROM scratch
 
 # Copy the binary built from the local machine
-COPY aip_food_lookup /
+COPY aip_food_lookup /.
 
 # Expose the port that the application will run on
 EXPOSE 8080

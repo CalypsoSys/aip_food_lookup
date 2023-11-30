@@ -1,3 +1,6 @@
+//go:build linux && !appengine && !heroku
+// +build linux,!appengine,!heroku
+
 package main
 
 import (
