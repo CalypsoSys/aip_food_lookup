@@ -13,7 +13,9 @@ import (
 )
 
 var (
-	allFoods map[string]string
+	allFoods       map[string]string
+	allowedFood    map[string]string
+	disAllowedFood map[string]string
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -27,6 +29,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	allFoods = map[string]string{}
+	allowedFood = map[string]string{}
+	disAllowedFood = map[string]string{}
 
 	dataFolder := os.Getenv("AIP_DATA_FOLDER")
 	processDirectory(dataFolder)
@@ -41,6 +45,12 @@ func getParentFolder(path string) (string, error) {
 	return parent, nil
 }
 
+func getFileNameWithoutExtension(filePath string) (string, error) {
+	base := filepath.Base(filePath)
+	name := strings.TrimSuffix(base, filepath.Ext(base))
+	return name, nil
+}
+
 func processFile(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -48,19 +58,26 @@ func processFile(filePath string) error {
 	}
 	defer file.Close()
 
-	category, _ := getParentFolder(filePath)
+	allowed, _ := getParentFolder(filePath)
+	category, _ := getFileNameWithoutExtension(filePath)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line := strings.ToLower(scanner.Text())
-		if cat, exists := allFoods[line]; !exists {
-			allFoods[line] = category
+		line := scanner.Text()
+		lower := strings.ToLower(line)
+		if cat, exists := allFoods[lower]; !exists {
+			allFoods[lower] = fmt.Sprintf("%s-%s", allowed, category)
 		} else {
-			if cat != category {
-				fmt.Println()
+			if cat != fmt.Sprintf("%s-%s", allowed, category) {
+				fmt.Println(line, cat)
 			}
 			fmt.Println(line)
 		}
 
+		if allowed == "allowed" {
+			allowedFood[line] = category
+		} else {
+			disAllowedFood[line] = category
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
