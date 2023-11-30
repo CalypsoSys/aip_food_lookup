@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var (
@@ -34,6 +35,12 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 }
 
+func getParentFolder(path string) (string, error) {
+	dir := filepath.Dir(path)
+	parent := filepath.Base(dir)
+	return parent, nil
+}
+
 func processFile(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -41,10 +48,19 @@ func processFile(filePath string) error {
 	}
 	defer file.Close()
 
+	category, _ := getParentFolder(filePath)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line := scanner.Text()
-		fmt.Println(line)
+		line := strings.ToLower(scanner.Text())
+		if cat, exists := allFoods[line]; !exists {
+			allFoods[line] = category
+		} else {
+			if cat != category {
+				fmt.Println()
+			}
+			fmt.Println(line)
+		}
+
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -61,7 +77,6 @@ func processDirectory(directoryPath string) error {
 		}
 
 		if !info.IsDir() && filepath.Ext(path) == ".dat" {
-			fmt.Println("Processing file:", path)
 			if err := processFile(path); err != nil {
 				fmt.Println("Error processing file:", err)
 			}
