@@ -11,7 +11,9 @@ sudo docker build -t aip_food_lookup .
 
 sudo docker rmi -f $(sudo docker images -f "dangling=true" -q)
 sudo docker save aip_food_lookup > aip_food_lookup.tar
-cp aip_food_lookup.tar /mnt/c/transfer/.
+mkdir -p /mnt/c/transfer/aip/data
+cp aip_food_lookup.tar /mnt/c/transfer/aip/.
+cp -r ../cmd/aip_food_lookup/data/ /mnt/c/transfer/aip/
 
 #sudo docker run -p 8080:8080 aip_food_lookup
 
