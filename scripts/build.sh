@@ -17,7 +17,7 @@ cp -r ../cmd/aip_food_lookup/data/ /mnt/c/transfer/aip/
 
 #sudo docker run -p 8080:8080 aip_food_lookup
 
-#curl http://localhost:8080
+#curl http://localhost:8080/?key=apple
 
 #1. copy aip_food_lookup.tar /home/calypso/docker
 #2. cd /home/calypso/docker/aip_food_lookup_go
@@ -27,3 +27,4 @@ cp -r ../cmd/aip_food_lookup/data/ /mnt/c/transfer/aip/
 #6. sudo docker rmi -f $(sudo docker images -f "dangling=true" -q)
 #7. cd /home/calypso/docker/aip_food_lookup_go
 #9. sudo docker-compose up -d
+#10. docker exec -it aip_food_lookup /bin/bash
