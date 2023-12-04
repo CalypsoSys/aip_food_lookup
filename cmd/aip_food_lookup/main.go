@@ -33,7 +33,7 @@ var (
 	nameFoosMap map[string]*apiFood
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func searchHandler(w http.ResponseWriter, r *http.Request) {
 	// Set CORS headers
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -69,9 +69,7 @@ func main() {
 	dataFolder := os.Getenv("AIP_DATA_FOLDER")
 	processDirectory(dataFolder)
 
-	match("Sel")
-
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/search", searchHandler)
 	http.ListenAndServe(":8080", nil)
 }
 
