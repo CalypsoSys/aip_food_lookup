@@ -10,6 +10,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -36,6 +37,7 @@ type RequestData struct {
 }
 
 var (
+	dataFolder  string
 	nameFoosMap map[string]*apiFood
 )
 
@@ -104,6 +106,11 @@ func suggestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(requestData.InputText) < 3 {
+		http.Error(w, "Suggestion to short", http.StatusBadRequest)
+	}
+
+	appendToFile(requestData.Allowed, requestData.InputText)
 	// Set the response headers
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -112,7 +119,7 @@ func suggestHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	nameFoosMap = map[string]*apiFood{}
 
-	dataFolder := os.Getenv("AIP_DATA_FOLDER")
+	dataFolder = os.Getenv("AIP_DATA_FOLDER")
 	processDirectory(dataFolder)
 
 	http.HandleFunc("/search", searchHandler)
@@ -225,4 +232,38 @@ func processDirectory(directoryPath string) error {
 	})
 
 	return err
+}
+
+func appendToFile(alloweded bool, text string) error {
+	var fileName string
+	if alloweded {
+		fileName = "suggested_allowed.txt"
+	} else {
+		fileName = "suggested_not_allowed.txt"
+	}
+
+	filePath := path.Join(dataFolder, fileName)
+	// Open the file in append mode, create it if it doesn't exist
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Create a buffered writer to efficiently write to the file
+	writer := bufio.NewWriter(file)
+
+	// Write the text followed by a new line
+	_, err = fmt.Fprintln(writer, text)
+	if err != nil {
+		return err
+	}
+
+	// Flush the writer to ensure the data is written to the file
+	err = writer.Flush()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

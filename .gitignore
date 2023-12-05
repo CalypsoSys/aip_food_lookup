@@ -21,3 +21,5 @@
 go.work
 docker/aip_food_lookup
 docker/aip_food_lookup.tar
+cmd/aip_food_lookup/data/suggested_allowed.txt
+cmd/aip_food_lookup/data/suggested_not_allowed.txt
