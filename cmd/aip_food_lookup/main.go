@@ -29,15 +29,35 @@ type ResponseData struct {
 	PossibleDisallowed []string `json:"possible_disallowed"`
 }
 
+// RequestData represents the structure of the JSON request
+type RequestData struct {
+	InputText string `json:"inputText"`
+	Allowed   bool   `json:"allowed"`
+}
+
 var (
 	nameFoosMap map[string]*apiFood
 )
 
-func searchHandler(w http.ResponseWriter, r *http.Request) {
+func setCORS(w http.ResponseWriter, r *http.Request) bool {
 	// Set CORS headers
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	// Handle preflight requests
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return true
+	}
+
+	return false
+}
+
+func searchHandler(w http.ResponseWriter, r *http.Request) {
+	if setCORS(w, r) {
+		return
+	}
 
 	key := r.URL.Query().Get("key")
 
@@ -46,7 +66,15 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := match(key)
+	var response ResponseData
+	if key == "longlistjoe" {
+		response = ResponseData{
+			PossibleAllowed:    []string{"a one", "a two", "a three", "a four", "a five", "a six", "a seven", "a eight", "a nine", "a ten"},
+			PossibleDisallowed: []string{"d one", "d two", "d three", "d four", "d five", "d six", "d seven", "d eight", "d nine", "d ten"},
+		}
+	} else {
+		response = match(key)
+	}
 
 	// Convert the response to JSON
 	jsonData, err := json.Marshal(response)
@@ -63,6 +91,24 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonData)
 }
 
+func suggestHandler(w http.ResponseWriter, r *http.Request) {
+	if setCORS(w, r) {
+		return
+	}
+
+	// Parse the JSON request
+	var requestData RequestData
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		http.Error(w, "Error decoding JSON", http.StatusBadRequest)
+		return
+	}
+
+	// Set the response headers
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+}
+
 func main() {
 	nameFoosMap = map[string]*apiFood{}
 
@@ -70,6 +116,7 @@ func main() {
 	processDirectory(dataFolder)
 
 	http.HandleFunc("/search", searchHandler)
+	http.HandleFunc("/suggest", suggestHandler)
 	http.ListenAndServe(":8080", nil)
 }
 
