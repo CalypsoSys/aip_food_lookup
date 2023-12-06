@@ -1,5 +1,5 @@
-module aip_food_lookup
+module github.com/CalypsoSys/aip_food_lookup
 
-go 1.18
+go 1.21
 
 require github.com/CalypsoSys/godoublemetaphone v0.1.1
