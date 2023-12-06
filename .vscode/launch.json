@@ -12,6 +12,14 @@
             "program": "${workspaceFolder}/cmd/aip_food_lookup",
             "cwd": "${workspaceFolder}/cmd/aip_food_lookup",
             "env": {"AIP_DATA_FOLDER": "data"}
+        },
+        {
+            "name": "Nonsense I Know",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/nonsense_i_know",
+            "cwd": "${workspaceFolder}/cmd/nonsense_i_know",
         }
     ]
 }
