@@ -7,6 +7,9 @@ cd ./cmd/aip_food_lookup/
 CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ../../docker/aip_food_lookup .
 
 cd ../../docker
+#sudo service docker status
+#sudo service docker restart
+
 sudo docker build -t aip_food_lookup .
 
 sudo docker rmi -f $(sudo docker images -f "dangling=true" -q)
