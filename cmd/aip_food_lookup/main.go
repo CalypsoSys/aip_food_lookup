@@ -34,8 +34,8 @@ type apiFood struct {
 }
 
 type ResponseData struct {
-	PossibleAllowed    []string `json:"possible_allowed"`
-	PossibleDisallowed []string `json:"possible_disallowed"`
+	Allowed    []string `json:"allowed"`
+	NotAllowed []string `json:"not_allowed"`
 }
 
 // RequestData represents the structure of the JSON request
@@ -59,6 +59,8 @@ var (
 	nameFoosMap           map[string]*apiFood
 	allowedSuggestions    map[string]bool
 	notAllowedSuggestions map[string]bool
+	allowedCategories     []string
+	notAllowedCategories  []string
 )
 
 func decodePrivateKey(encodedPrivateKey string) (*rsa.PrivateKey, error) {
@@ -145,26 +147,14 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	var response ResponseData
 	if key == "longlistjoe" {
 		response = ResponseData{
-			PossibleAllowed:    []string{"a one", "a two", "a three", "a four", "a five", "a six", "a seven", "a eight", "a nine", "a ten"},
-			PossibleDisallowed: []string{"d one", "d two", "d three", "d four", "d five", "d six", "d seven", "d eight", "d nine", "d ten"},
+			Allowed:    []string{"a one", "a two", "a three", "a four", "a five", "a six", "a seven", "a eight", "a nine", "a ten", "a eleven", "a tweleve"},
+			NotAllowed: []string{"d one", "d two", "d three", "d four", "d five", "d six", "d seven", "d eight", "d nine", "d ten", "n eleven", "n tweleve"},
 		}
 	} else {
 		response = match(key)
 	}
 
-	// Convert the response to JSON
-	jsonData, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
-		return
-	}
-
-	// Set the response headers
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	// Write the JSON data to the response
-	w.Write(jsonData)
+	commonResponse(w, response)
 }
 
 func suggestHandler(w http.ResponseWriter, r *http.Request) {
@@ -198,17 +188,51 @@ func suggestHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func categoriesHandler(w http.ResponseWriter, r *http.Request) {
+	if setCORS(w, r) {
+		return
+	}
+
+	var response ResponseData
+	response = ResponseData{
+		Allowed:    allowedCategories,
+		NotAllowed: notAllowedCategories,
+	}
+	commonResponse(w, response)
+}
+
+func commonResponse(w http.ResponseWriter, response ResponseData) {
+
+	// Convert the response to JSON
+	jsonData, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
+		return
+	}
+
+	// Set the response headers
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	// Write the JSON data to the response
+	w.Write(jsonData)
+}
+
 func main() {
 	nameFoosMap = map[string]*apiFood{}
 	allowedSuggestions = map[string]bool{}
 	notAllowedSuggestions = map[string]bool{}
+	allowedCategories = []string{}
+	notAllowedCategories = []string{}
 
 	dataFolder = os.Getenv("AIP_DATA_FOLDER")
 	processDirectory(dataFolder)
 
 	http.HandleFunc("/search", searchHandler)
 	http.HandleFunc("/suggest", suggestHandler)
-	http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/categories", categoriesHandler)
+	err := http.ListenAndServe(":8080", nil)
+	fmt.Println(err)
 }
 
 func match(name string) ResponseData {
@@ -216,21 +240,21 @@ func match(name string) ResponseData {
 	sdm := godoublemetaphone.NewShortDoubleMetaphone(name)
 	primary := sdm.PrimaryShortKey()
 	possibleAllowed := []string{}
-	possibleDisallowed := []string{}
+	possibleNotAllowed := []string{}
 	soundPossibleAllowed := []string{}
-	soundPossibleDisallowed := []string{}
+	soundpossibleNotAllowed := []string{}
 	for k, v := range nameFoosMap {
 		if strings.HasPrefix(k, name) {
 			if v.allowed {
 				possibleAllowed = append(possibleAllowed, v.name)
 			} else {
-				possibleDisallowed = append(possibleDisallowed, v.name)
+				possibleNotAllowed = append(possibleNotAllowed, v.name)
 			}
 		} else if math.Abs(float64(int(primary)-int(v.primaryShortMetaphone))) < 10 {
 			if v.allowed {
 				soundPossibleAllowed = append(possibleAllowed, v.name)
 			} else {
-				soundPossibleDisallowed = append(possibleDisallowed, v.name)
+				soundpossibleNotAllowed = append(possibleNotAllowed, v.name)
 			}
 		}
 	}
@@ -239,11 +263,11 @@ func match(name string) ResponseData {
 		possibleAllowed = soundPossibleAllowed
 	}
 
-	if len(possibleDisallowed) == 0 && len(soundPossibleDisallowed) > 0 {
-		possibleDisallowed = soundPossibleDisallowed
+	if len(possibleNotAllowed) == 0 && len(soundpossibleNotAllowed) > 0 {
+		possibleNotAllowed = soundpossibleNotAllowed
 	}
 
-	return ResponseData{PossibleAllowed: possibleAllowed, PossibleDisallowed: possibleDisallowed}
+	return ResponseData{Allowed: possibleAllowed, NotAllowed: possibleNotAllowed}
 }
 
 func getParentFolder(path string) (string, error) {
@@ -266,10 +290,14 @@ func processFile(filePath string) error {
 	defer file.Close()
 
 	allowed, _ := getParentFolder(filePath)
-	if allowed != "allowed" && allowed != "not_allowed" {
+	category, _ := getFileNameWithoutExtension(filePath)
+	if allowed == "allowed" {
+		allowedCategories = append(allowedCategories, convertPhrase(category))
+	} else if allowed == "not_allowed" {
+		notAllowedCategories = append(notAllowedCategories, convertPhrase(category))
+	} else {
 		return errors.New("must be allowed or not allowed")
 	}
-	category, _ := getFileNameWithoutExtension(filePath)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -405,4 +433,16 @@ func loadCurrentSuggested(filePath string, cache map[string]bool) error {
 	}
 
 	return nil
+}
+
+func convertPhrase(input string) string {
+	words := strings.Split(input, "_")
+	for i, word := range words {
+		if len(word) > 0 {
+			// Capitalize the first letter of each word
+			words[i] = strings.ToUpper(string(word[0])) + word[1:]
+		}
+	}
+	// Join the words with " and "
+	return strings.Join(words, " and ")
 }
