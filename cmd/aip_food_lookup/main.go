@@ -151,7 +151,9 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 			NotAllowed: []string{"d one", "d two", "d three", "d four", "d five", "d six", "d seven", "d eight", "d nine", "d ten", "n eleven", "n tweleve"},
 		}
 	} else {
-		response = match(key)
+		typeSearch := r.URL.Query().Get("type")
+
+		response = match(key, typeSearch)
 	}
 
 	commonResponse(w, response)
@@ -235,7 +237,7 @@ func main() {
 	fmt.Println(err)
 }
 
-func match(name string) ResponseData {
+func match(name string, typeSearch string) ResponseData {
 	name = strings.ToLower(name)
 	sdm := godoublemetaphone.NewShortDoubleMetaphone(name)
 	primary := sdm.PrimaryShortKey()
@@ -243,14 +245,25 @@ func match(name string) ResponseData {
 	possibleNotAllowed := []string{}
 	soundPossibleAllowed := []string{}
 	soundpossibleNotAllowed := []string{}
+
+	textSearch := true
+	soundSearch := true
+	if typeSearch == "searchbytext" {
+		soundSearch = false
+	} else if typeSearch == "searchbysound" {
+		textSearch = false
+	}
+
 	for k, v := range nameFoosMap {
-		if strings.HasPrefix(k, name) {
+		if textSearch && strings.HasPrefix(k, name) {
 			if v.allowed {
 				possibleAllowed = append(possibleAllowed, v.name)
 			} else {
 				possibleNotAllowed = append(possibleNotAllowed, v.name)
 			}
-		} else if math.Abs(float64(int(primary)-int(v.primaryShortMetaphone))) < 10 {
+		}
+
+		if soundSearch && math.Abs(float64(int(primary)-int(v.primaryShortMetaphone))) < 10 {
 			if v.allowed {
 				soundPossibleAllowed = append(possibleAllowed, v.name)
 			} else {
@@ -267,7 +280,21 @@ func match(name string) ResponseData {
 		possibleNotAllowed = soundpossibleNotAllowed
 	}
 
-	return ResponseData{Allowed: possibleAllowed, NotAllowed: possibleNotAllowed}
+	return ResponseData{Allowed: removeDuplicates(possibleAllowed), NotAllowed: removeDuplicates(possibleNotAllowed)}
+}
+
+func removeDuplicates(strings []string) []string {
+	unique := make(map[string]bool)
+	var result []string
+
+	for _, str := range strings {
+		if _, value := unique[str]; !value {
+			unique[str] = true
+			result = append(result, str)
+		}
+	}
+
+	return result
 }
 
 func getParentFolder(path string) (string, error) {
