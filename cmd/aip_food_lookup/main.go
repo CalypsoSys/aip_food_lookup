@@ -203,6 +203,48 @@ func categoriesHandler(w http.ResponseWriter, r *http.Request) {
 	commonResponse(w, response)
 }
 
+func subCategoryHandler(w http.ResponseWriter, r *http.Request) {
+	category := r.URL.Query().Get("cat")
+
+	if category == "" {
+		http.Error(w, "Category parameter is missing", http.StatusBadRequest)
+		return
+	}
+
+	subCategory := r.URL.Query().Get("sub")
+
+	if subCategory == "" {
+		http.Error(w, "Sub Category parameter is missing", http.StatusBadRequest)
+		return
+	}
+
+	response := ResponseData{
+		Allowed:    []string{},
+		NotAllowed: []string{},
+	}
+
+	var allowed bool
+	var subCats *[]string
+	if category == "Allowed" {
+		allowed = true
+		subCats = &response.Allowed
+	} else if category == "Not Allowed" {
+		allowed = false
+		subCats = &response.NotAllowed
+	} else {
+		http.Error(w, "Unknown Category", http.StatusBadRequest)
+		return
+	}
+
+	for _, v := range nameFoosMap {
+		if v.allowed == allowed && v.category == subCategory {
+			*subCats = append(*subCats, v.name)
+		}
+	}
+
+	commonResponse(w, response)
+}
+
 func commonResponse(w http.ResponseWriter, response ResponseData) {
 
 	// Convert the response to JSON
@@ -233,6 +275,7 @@ func main() {
 	http.HandleFunc("/search", searchHandler)
 	http.HandleFunc("/suggest", suggestHandler)
 	http.HandleFunc("/categories", categoriesHandler)
+	http.HandleFunc("/subcategory", subCategoryHandler)
 	err := http.ListenAndServe(":8080", nil)
 	fmt.Println(err)
 }
