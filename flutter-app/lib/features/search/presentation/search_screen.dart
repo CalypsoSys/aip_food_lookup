@@ -60,7 +60,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: state.searchType,
+                  initialValue: state.searchType,
                   decoration: const InputDecoration(labelText: 'Search type'),
                   items: feature.searchTypes
                       .map(

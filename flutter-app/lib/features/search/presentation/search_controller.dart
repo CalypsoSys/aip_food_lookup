@@ -9,11 +9,12 @@ const searchTypes = [
   'Search by Text',
   'Search by Sound',
 ];
+const defaultSearchType = 'Search by Text and Sound';
 
 class SearchState {
   const SearchState({
     this.query = '',
-    this.searchType = searchTypes.first,
+    this.searchType = defaultSearchType,
     this.result = const SearchResult(allowed: [], notAllowed: []),
     this.isLoading = false,
     this.errorMessage,
