@@ -6,7 +6,10 @@ services:
     expose:
       - 8080
     restart: always
+    volumes:
+      - ../data:/var/log/data
     environment:
+      AIP_DATA_FOLDER: /var/log/data
       VIRTUAL_HOST: ${AIP_FOOD_LOOKUP_HOST}
       LETSENCRYPT_HOST: ${AIP_FOOD_LOOKUP_HOST}
       LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
@@ -18,4 +21,3 @@ networks:
   default:
     external:
       name: nginx-proxy
-
