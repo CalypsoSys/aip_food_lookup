@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../ads/ad_banner.dart';
+import '../../../widgets/status_card.dart';
 import 'category_controller.dart';
 
 class CategoryListScreen extends StatefulWidget {
@@ -50,14 +51,19 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                 padding: const EdgeInsets.all(12),
                 children: [
                   Text(
-                    '${widget.category}: ${widget.subcategory}',
+                    state.isLoading
+                        ? '${widget.category}: ${widget.subcategory}'
+                        : '${widget.category}: ${widget.subcategory} (${state.items.length})',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
                   if (state.isLoading) const LinearProgressIndicator(),
                   if (state.errorMessage != null)
-                    _MessageCard(
+                    StatusCard(
                       title: state.errorMessage!,
+                      subtitle:
+                          'Pull to refresh or check the backend connection.',
+                      icon: Icons.wifi_off_outlined,
                       actionLabel: 'Retry',
                       onAction: () => _controller.loadFoods(
                         widget.category,
@@ -67,7 +73,10 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                   if (!state.isLoading &&
                       state.errorMessage == null &&
                       state.items.isEmpty)
-                    const _MessageCard(title: 'No foods found.'),
+                    const StatusCard(
+                      title: 'No foods found.',
+                      icon: Icons.search_off_outlined,
+                    ),
                   for (final food in state.items)
                     Card(child: ListTile(title: Text(food))),
                   const SizedBox(height: 16),
@@ -77,33 +86,6 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
             );
           },
         ),
-      ),
-    );
-  }
-}
-
-class _MessageCard extends StatelessWidget {
-  const _MessageCard({
-    required this.title,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final String title;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        title: Text(title),
-        trailing: actionLabel == null
-            ? null
-            : TextButton(
-                onPressed: onAction,
-                child: Text(actionLabel!),
-              ),
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../data/food_api.dart';
@@ -18,6 +20,7 @@ class SearchState {
     this.result = const SearchResult(allowed: [], notAllowed: []),
     this.isLoading = false,
     this.errorMessage,
+    this.hasSearched = false,
   });
 
   final String query;
@@ -25,6 +28,7 @@ class SearchState {
   final SearchResult result;
   final bool isLoading;
   final String? errorMessage;
+  final bool hasSearched;
 
   SearchState copyWith({
     String? query,
@@ -32,6 +36,7 @@ class SearchState {
     SearchResult? result,
     bool? isLoading,
     String? errorMessage,
+    bool? hasSearched,
     bool clearError = false,
   }) {
     return SearchState(
@@ -40,6 +45,7 @@ class SearchState {
       result: result ?? this.result,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
+      hasSearched: hasSearched ?? this.hasSearched,
     );
   }
 }
@@ -50,14 +56,18 @@ class SearchController extends ValueNotifier<SearchState> {
         super(const SearchState());
 
   final FoodApi _foodApi;
+  Timer? _debounce;
+  int _searchGeneration = 0;
 
-  Future<void> updateQuery(String query) async {
+  void updateQuery(String query) {
     value = value.copyWith(query: query, clearError: true);
-    await _runSearchIfValid();
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), _runSearchIfValid);
   }
 
   Future<void> updateSearchType(String searchType) async {
     value = value.copyWith(searchType: searchType, clearError: true);
+    _debounce?.cancel();
     await _runSearchIfValid();
   }
 
@@ -84,26 +94,45 @@ class SearchController extends ValueNotifier<SearchState> {
   Future<void> _runSearchIfValid() async {
     final query = value.query.trim();
     if (!_hasSearchMinimum(query)) {
+      _searchGeneration++;
       value = value.copyWith(
         result: const SearchResult(allowed: [], notAllowed: []),
         isLoading: false,
+        hasSearched: false,
         clearError: true,
       );
       return;
     }
 
-    value = value.copyWith(isLoading: true, clearError: true);
+    final generation = ++_searchGeneration;
+    value = value.copyWith(
+      isLoading: true,
+      hasSearched: true,
+      clearError: true,
+    );
     try {
       final result = await _foodApi.search(query, value.searchType);
+      if (generation != _searchGeneration) {
+        return;
+      }
       value = value.copyWith(result: result, isLoading: false);
     } catch (error, stackTrace) {
+      if (generation != _searchGeneration) {
+        return;
+      }
       debugPrint('Search failed: $error\n$stackTrace');
       value = value.copyWith(
         isLoading: false,
-        errorMessage: 'An unexpected error occurred.',
+        errorMessage: 'Could not reach the food lookup API.',
       );
     }
   }
 
   bool _hasSearchMinimum(String query) => query.length > 2;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
 }

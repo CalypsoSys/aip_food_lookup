@@ -4,7 +4,7 @@
     {
       "label": "backend: go run",
       "type": "shell",
-      "command": "$env:AIP_DATA_FOLDER='${workspaceFolder}\\data'; try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/ | Out-Null; Write-Host 'Backend ready on http://127.0.0.1:8080'; while ($true) { Start-Sleep -Seconds 3600 } } catch { Write-Host 'Backend starting on http://127.0.0.1:8080'; go run . }",
+      "command": "$env:AIP_DATA_FOLDER='${workspaceFolder}\\data'; try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/ | Out-Null; Write-Host 'Backend ready on http://127.0.0.1:8080'; Write-Host 'Using existing backend process. Stop that process if you need a fresh backend.'; while ($true) { Start-Sleep -Seconds 3600 } } catch { Write-Host 'Backend starting on http://127.0.0.1:8080'; Write-Host \"AIP_DATA_FOLDER=$env:AIP_DATA_FOLDER\"; go run . }",
       "options": {
         "cwd": "${workspaceFolder}/cmd/aip_food_lookup",
         "shell": {
@@ -43,7 +43,7 @@
         "-ExecutionPolicy",
         "Bypass",
         "-Command",
-        "$deadline = (Get-Date).AddSeconds(30); do { try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/ | Out-Null; exit 0 } catch { Start-Sleep -Milliseconds 500 } } while ((Get-Date) -lt $deadline); Write-Error 'Backend did not become ready on http://127.0.0.1:8080 within 30 seconds.'; exit 1"
+        "$deadline = (Get-Date).AddSeconds(30); do { try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/ | Out-Null; Write-Host 'Backend responded on http://127.0.0.1:8080'; exit 0 } catch { Start-Sleep -Milliseconds 500 } } while ((Get-Date) -lt $deadline); Write-Error 'Backend did not become ready on http://127.0.0.1:8080 within 30 seconds. Check whether port 8080 is blocked or another process is failing to start.'; exit 1"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
