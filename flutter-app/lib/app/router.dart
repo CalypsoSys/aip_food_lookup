@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../features/categories/presentation/categories_screen.dart';
+import '../features/diagnostics/presentation/diagnostics_screen.dart';
 import '../features/search/presentation/search_screen.dart';
 
 class AppRouter extends StatefulWidget {
@@ -18,6 +19,7 @@ class _AppRouterState extends State<AppRouter> {
     final screens = <Widget>[
       const SearchScreen(),
       const CategoriesScreen(),
+      const DiagnosticsScreen(),
     ];
 
     return Scaffold(
@@ -35,6 +37,10 @@ class _AppRouterState extends State<AppRouter> {
           NavigationDestination(
             icon: Icon(Icons.category_outlined),
             label: 'Categories',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            label: 'Diagnostics',
           ),
         ],
       ),

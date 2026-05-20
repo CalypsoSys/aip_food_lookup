@@ -20,6 +20,7 @@ class CategoryListScreen extends StatefulWidget {
 
 class _CategoryListScreenState extends State<CategoryListScreen> {
   late final CategoryController _controller;
+  String _filter = '';
 
   @override
   void initState() {
@@ -57,6 +58,14 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
+                  TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'Filter foods',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (value) => setState(() => _filter = value),
+                  ),
+                  const SizedBox(height: 12),
                   if (state.isLoading) const LinearProgressIndicator(),
                   if (state.errorMessage != null)
                     StatusCard(
@@ -72,12 +81,12 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                     ),
                   if (!state.isLoading &&
                       state.errorMessage == null &&
-                      state.items.isEmpty)
+                      _filteredItems(state).isEmpty)
                     const StatusCard(
                       title: 'No foods found.',
                       icon: Icons.search_off_outlined,
                     ),
-                  for (final food in state.items)
+                  for (final food in _filteredItems(state))
                     Card(child: ListTile(title: Text(food))),
                   const SizedBox(height: 16),
                   const AdBannerPlaceholder(),
@@ -88,5 +97,15 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
         ),
       ),
     );
+  }
+
+  List<String> _filteredItems(CategoryListState state) {
+    final query = _filter.trim().toLowerCase();
+    if (query.isEmpty) {
+      return state.items;
+    }
+    return state.items
+        .where((item) => item.toLowerCase().contains(query))
+        .toList();
   }
 }

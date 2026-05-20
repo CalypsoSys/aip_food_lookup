@@ -40,6 +40,46 @@ void main() {
     });
   });
 
+  test('clearQuery resets query, results, and search state', () async {
+    final api = _FakeFoodApi();
+    final controller = SearchController(foodApi: api);
+
+    controller.updateQuery('apple');
+    await controller.updateSearchType(defaultSearchType);
+
+    controller.clearQuery();
+
+    expect(controller.value.query, isEmpty);
+    expect(controller.value.result.allowed, isEmpty);
+    expect(controller.value.hasSearched, isFalse);
+    expect(controller.value.recentSearches, ['apple']);
+  });
+
+  test('successful searches keep last five recent searches', () async {
+    final api = _FakeFoodApi();
+    final controller = SearchController(foodApi: api);
+
+    for (final query in ['apple', 'banana', 'carrot', 'date', 'eggs', 'fig']) {
+      controller.updateQuery(query);
+      await controller.updateSearchType(defaultSearchType);
+    }
+
+    expect(
+      controller.value.recentSearches,
+      ['fig', 'eggs', 'date', 'carrot', 'banana'],
+    );
+  });
+
+  test('selectRecentSearch reruns search with selected query', () async {
+    final api = _FakeFoodApi();
+    final controller = SearchController(foodApi: api);
+
+    await controller.selectRecentSearch('apple');
+
+    expect(controller.value.query, 'apple');
+    expect(api.lastSearchText, 'apple');
+  });
+
   test('suggestCurrentFood requires at least 3 characters', () async {
     final api = _FakeFoodApi();
     final controller = SearchController(foodApi: api);

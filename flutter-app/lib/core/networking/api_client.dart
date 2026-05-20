@@ -33,6 +33,18 @@ class ApiClient {
     }
   }
 
+  Future<String> getText(String path) async {
+    final uri = _buildUri(path);
+    final request = await _client.getUrl(uri);
+    request.headers.set(HttpHeaders.acceptHeader, 'text/plain');
+    final response = await request.close();
+    final text = await response.transform(utf8.decoder).join();
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(text, statusCode: response.statusCode);
+    }
+    return text;
+  }
+
   Uri _buildUri(String path, [Map<String, String>? query]) {
     final normalizedPath = path.startsWith('/') ? path : '/$path';
     return _baseUri.replace(

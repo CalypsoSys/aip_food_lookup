@@ -26,6 +26,8 @@ flutter run --dart-define=AIP_BACKEND_URL=http://10.0.2.2:8080
 
 Do not commit private backend URLs, production AdMob IDs, signing keys, tokens, or certificates.
 
+The app includes a Diagnostics tab that shows the active backend URL and can test the `/` health endpoint. Use it when switching between emulator URLs and physical-phone LAN URLs.
+
 ## App Identity Assets
 
 The Flutter app now carries migrated MAUI/recovered assets under `assets/identity/` and `assets/images/`. Android launcher icons are generated into `android/app/src/main/res/mipmap-*` from `assets/identity/app_icon.png`, and the native splash screen uses a padded app-mark image generated from the same source.

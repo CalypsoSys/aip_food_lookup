@@ -18,6 +18,7 @@ class SearchState {
     this.query = '',
     this.searchType = defaultSearchType,
     this.result = const SearchResult(allowed: [], notAllowed: []),
+    this.recentSearches = const [],
     this.isLoading = false,
     this.isSuggesting = false,
     this.errorMessage,
@@ -27,6 +28,7 @@ class SearchState {
   final String query;
   final String searchType;
   final SearchResult result;
+  final List<String> recentSearches;
   final bool isLoading;
   final bool isSuggesting;
   final String? errorMessage;
@@ -36,6 +38,7 @@ class SearchState {
     String? query,
     String? searchType,
     SearchResult? result,
+    List<String>? recentSearches,
     bool? isLoading,
     bool? isSuggesting,
     String? errorMessage,
@@ -46,6 +49,7 @@ class SearchState {
       query: query ?? this.query,
       searchType: searchType ?? this.searchType,
       result: result ?? this.result,
+      recentSearches: recentSearches ?? this.recentSearches,
       isLoading: isLoading ?? this.isLoading,
       isSuggesting: isSuggesting ?? this.isSuggesting,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
@@ -67,6 +71,24 @@ class SearchController extends ValueNotifier<SearchState> {
     value = value.copyWith(query: query, clearError: true);
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 350), _runSearchIfValid);
+  }
+
+  void clearQuery() {
+    _debounce?.cancel();
+    _searchGeneration++;
+    value = value.copyWith(
+      query: '',
+      result: const SearchResult(allowed: [], notAllowed: []),
+      isLoading: false,
+      hasSearched: false,
+      clearError: true,
+    );
+  }
+
+  Future<void> selectRecentSearch(String query) async {
+    value = value.copyWith(query: query, clearError: true);
+    _debounce?.cancel();
+    await _runSearchIfValid();
   }
 
   Future<void> updateSearchType(String searchType) async {
@@ -125,7 +147,11 @@ class SearchController extends ValueNotifier<SearchState> {
       if (generation != _searchGeneration) {
         return;
       }
-      value = value.copyWith(result: result, isLoading: false);
+      value = value.copyWith(
+        result: result,
+        recentSearches: _updatedRecentSearches(query),
+        isLoading: false,
+      );
     } catch (error, stackTrace) {
       if (generation != _searchGeneration) {
         return;
@@ -139,6 +165,14 @@ class SearchController extends ValueNotifier<SearchState> {
   }
 
   bool _hasSearchMinimum(String query) => query.length > 2;
+
+  List<String> _updatedRecentSearches(String query) {
+    final normalized = query.trim();
+    final withoutDuplicate = value.recentSearches.where(
+      (item) => item.toLowerCase() != normalized.toLowerCase(),
+    );
+    return [normalized, ...withoutDuplicate].take(5).toList();
+  }
 
   @override
   void dispose() {

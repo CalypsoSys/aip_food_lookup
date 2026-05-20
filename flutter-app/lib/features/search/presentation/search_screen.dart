@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../ads/ad_banner.dart';
 import '../../../widgets/asset_header.dart';
@@ -14,15 +15,18 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   late final feature.SearchController _controller;
+  late final TextEditingController _textController;
 
   @override
   void initState() {
     super.initState();
     _controller = feature.SearchController();
+    _textController = TextEditingController();
   }
 
   @override
   void dispose() {
+    _textController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -47,14 +51,42 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
-                  decoration: const InputDecoration(
+                  controller: _textController,
+                  decoration: InputDecoration(
                     labelText: 'Food',
-                    hintText:
-                        'Enter a food to check, then suggest if needed',
+                    hintText: 'Enter a food to check, then suggest if needed',
+                    suffixIcon: state.query.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Clear search',
+                            onPressed: () {
+                              _textController.clear();
+                              _controller.clearQuery();
+                            },
+                            icon: const Icon(Icons.clear),
+                          ),
                   ),
                   textInputAction: TextInputAction.search,
                   onChanged: _controller.updateQuery,
                 ),
+                if (state.recentSearches.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      for (final recentSearch in state.recentSearches)
+                        ActionChip(
+                          label: Text(recentSearch),
+                          avatar: const Icon(Icons.history, size: 18),
+                          onPressed: () {
+                            _textController.text = recentSearch;
+                            _controller.selectRecentSearch(recentSearch);
+                          },
+                        ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Text(
                   state.isSuggesting
@@ -126,11 +158,12 @@ class _SearchScreenState extends State<SearchScreen> {
                   title: 'Allowed on AIP:',
                   fallback: _fallbackText(
                     state,
-                    suggestion:
-                        'Tap Allowed to suggest this food for review.',
+                    suggestion: 'Tap Allowed to suggest this food for review.',
                   ),
                   items: state.result.allowed,
                   hasSearched: state.hasSearched,
+                  status: _ResultStatus.allowed,
+                  onItemTap: _copyResult,
                 ),
                 const SizedBox(height: 12),
                 _ResultSection(
@@ -142,6 +175,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   items: state.result.notAllowed,
                   hasSearched: state.hasSearched,
+                  status: _ResultStatus.notAllowed,
+                  onItemTap: _copyResult,
                 ),
                 const SizedBox(height: 16),
                 const AdBannerPlaceholder(),
@@ -163,18 +198,18 @@ class _SearchScreenState extends State<SearchScreen> {
     final message = ok
         ? 'We will review "$query" promptly and add it to our catalog when appropriate.'
         : 'Enter at least 3 characters and make sure the backend is reachable.';
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Attention'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _copyResult(String result) async {
+    await Clipboard.setData(ClipboardData(text: result));
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Copied "$result"')),
     );
   }
 
@@ -195,24 +230,39 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
+enum _ResultStatus { allowed, notAllowed }
+
 class _ResultSection extends StatelessWidget {
   const _ResultSection({
     required this.title,
     required this.fallback,
     required this.items,
     required this.hasSearched,
+    required this.status,
+    required this.onItemTap,
   });
 
   final String title;
   final String fallback;
   final List<String> items;
   final bool hasSearched;
+  final _ResultStatus status;
+  final ValueChanged<String> onItemTap;
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final statusColor =
+        status == _ResultStatus.allowed ? Colors.green : colorScheme.error;
+    final containerColor = statusColor.withValues(alpha: 0.08);
+    final icon = status == _ResultStatus.allowed
+        ? Icons.check_circle_outline
+        : Icons.block;
+
     if (items.isEmpty) {
       return Card(
         child: ListTile(
+          leading: Icon(icon, color: statusColor),
           title: Text(hasSearched ? '$title 0' : title),
           subtitle: Text(fallback),
         ),
@@ -227,7 +277,17 @@ class _ResultSection extends StatelessWidget {
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 6),
-        ...items.map((item) => Card(child: ListTile(title: Text(item)))),
+        ...items.map(
+          (item) => Card(
+            color: containerColor,
+            child: ListTile(
+              leading: Icon(icon, color: statusColor),
+              title: Text(item),
+              trailing: const Icon(Icons.copy, size: 18),
+              onTap: () => onItemTap(item),
+            ),
+          ),
+        ),
       ],
     );
   }
