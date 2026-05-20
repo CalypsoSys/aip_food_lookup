@@ -32,25 +32,10 @@ class _SearchScreenState extends State<SearchScreen> {
     return ValueListenableBuilder<feature.SearchState>(
       valueListenable: _controller,
       builder: (context, state, _) {
+        final canSuggest = state.query.trim().length > 2 && !state.isSuggesting;
         return Scaffold(
           appBar: AppBar(
             title: const Text('AIP Food Lookup'),
-            actions: [
-              IconButton(
-                tooltip: 'Suggest allowed',
-                onPressed: () => _suggest(context, allowed: true),
-                icon: const ImageIcon(
-                  AssetImage('assets/images/message_add_icon.png'),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Suggest not allowed',
-                onPressed: () => _suggest(context, allowed: false),
-                icon: const ImageIcon(
-                  AssetImage('assets/images/message_minus_icon.png'),
-                ),
-              ),
-            ],
           ),
           body: SafeArea(
             child: ListView(
@@ -65,16 +50,46 @@ class _SearchScreenState extends State<SearchScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Food',
                     hintText:
-                        'Enter a food to check, then use + or - to suggest',
+                        'Enter a food to check, then suggest if needed',
                   ),
                   textInputAction: TextInputAction.search,
                   onChanged: _controller.updateQuery,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Type at least 3 characters. Results update after you pause typing.',
+                  state.isSuggesting
+                      ? 'Submitting suggestion...'
+                      : 'Type at least 3 characters. Results update after you pause typing.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: canSuggest
+                            ? () => _suggest(context, allowed: true)
+                            : null,
+                        icon: const Icon(Icons.check_circle_outline),
+                        label: const Text('Allowed'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: canSuggest
+                            ? () => _suggest(context, allowed: false)
+                            : null,
+                        icon: const Icon(Icons.block),
+                        label: const Text('Not allowed'),
+                      ),
+                    ),
+                  ],
+                ),
+                if (state.isSuggesting) ...[
+                  const SizedBox(height: 8),
+                  const LinearProgressIndicator(),
+                ],
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: state.searchType,
@@ -111,7 +126,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   title: 'Allowed on AIP:',
                   fallback: _fallbackText(
                     state,
-                    suggestion: 'Use the plus button to suggest as allowed.',
+                    suggestion:
+                        'Tap Allowed to suggest this food for review.',
                   ),
                   items: state.result.allowed,
                   hasSearched: state.hasSearched,
@@ -122,7 +138,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   fallback: _fallbackText(
                     state,
                     suggestion:
-                        'Use the minus button to suggest as not allowed.',
+                        'Tap Not allowed to suggest this food for review.',
                   ),
                   items: state.result.notAllowed,
                   hasSearched: state.hasSearched,

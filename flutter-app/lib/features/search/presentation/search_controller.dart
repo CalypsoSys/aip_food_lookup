@@ -19,6 +19,7 @@ class SearchState {
     this.searchType = defaultSearchType,
     this.result = const SearchResult(allowed: [], notAllowed: []),
     this.isLoading = false,
+    this.isSuggesting = false,
     this.errorMessage,
     this.hasSearched = false,
   });
@@ -27,6 +28,7 @@ class SearchState {
   final String searchType;
   final SearchResult result;
   final bool isLoading;
+  final bool isSuggesting;
   final String? errorMessage;
   final bool hasSearched;
 
@@ -35,6 +37,7 @@ class SearchState {
     String? searchType,
     SearchResult? result,
     bool? isLoading,
+    bool? isSuggesting,
     String? errorMessage,
     bool? hasSearched,
     bool clearError = false,
@@ -44,6 +47,7 @@ class SearchState {
       searchType: searchType ?? this.searchType,
       result: result ?? this.result,
       isLoading: isLoading ?? this.isLoading,
+      isSuggesting: isSuggesting ?? this.isSuggesting,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       hasSearched: hasSearched ?? this.hasSearched,
     );
@@ -76,15 +80,21 @@ class SearchController extends ValueNotifier<SearchState> {
     if (!_hasSearchMinimum(query)) {
       return false;
     }
+    if (value.isSuggesting) {
+      return false;
+    }
 
+    value = value.copyWith(isSuggesting: true, clearError: true);
     try {
       await _foodApi.suggest(
         SuggestFoodRequest(inputText: query, allowed: allowed),
       );
+      value = value.copyWith(isSuggesting: false);
       return true;
     } catch (error, stackTrace) {
       debugPrint('Suggestion failed: $error\n$stackTrace');
       value = value.copyWith(
+        isSuggesting: false,
         errorMessage: 'Suggestion could not be made.',
       );
       return false;
