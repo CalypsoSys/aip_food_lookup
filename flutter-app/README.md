@@ -28,7 +28,7 @@ Do not commit private backend URLs, production AdMob IDs, signing keys, tokens, 
 
 ## App Identity Assets
 
-The Flutter app now carries migrated MAUI/recovered assets under `assets/identity/` and `assets/images/`. Android launcher icons are generated into `android/app/src/main/res/mipmap-*` from `assets/identity/app_icon.png`, and the native splash screen uses `assets/identity/splash.png`.
+The Flutter app now carries migrated MAUI/recovered assets under `assets/identity/` and `assets/images/`. Android launcher icons are generated into `android/app/src/main/res/mipmap-*` from `assets/identity/app_icon.png`, and the native splash screen uses a padded app-mark image generated from the same source.
 
 Android uses the package/application ID `com.calypsosystems.aipfoodlookup` and the launcher label `AIP Food Lookup`. iOS remains planned for a later macOS/cloud build phase; the same committed identity assets should be used when generating the iOS runner.
 

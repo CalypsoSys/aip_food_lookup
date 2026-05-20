@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../ads/ad_banner.dart';
+import '../../../widgets/asset_header.dart';
 import 'category_details_screen.dart';
 
 class CategoriesScreen extends StatelessWidget {
@@ -16,6 +17,11 @@ class CategoriesScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(12),
           children: [
+            const AssetHeader(
+              assetName: 'assets/identity/adaptive_icon.png',
+              height: 64,
+            ),
+            const SizedBox(height: 12),
             for (final category in categories)
               Card(
                 child: ListTile(

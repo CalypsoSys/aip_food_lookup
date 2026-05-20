@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../ads/ad_banner.dart';
+import '../../../widgets/asset_header.dart';
 import '../../../widgets/status_card.dart';
 import 'search_controller.dart' as feature;
 
@@ -38,12 +39,16 @@ class _SearchScreenState extends State<SearchScreen> {
               IconButton(
                 tooltip: 'Suggest allowed',
                 onPressed: () => _suggest(context, allowed: true),
-                icon: const Icon(Icons.add_comment_outlined),
+                icon: const ImageIcon(
+                  AssetImage('assets/images/message_add_icon.png'),
+                ),
               ),
               IconButton(
                 tooltip: 'Suggest not allowed',
                 onPressed: () => _suggest(context, allowed: false),
-                icon: const Icon(Icons.comments_disabled_outlined),
+                icon: const ImageIcon(
+                  AssetImage('assets/images/message_minus_icon.png'),
+                ),
               ),
             ],
           ),
@@ -51,10 +56,16 @@ class _SearchScreenState extends State<SearchScreen> {
             child: ListView(
               padding: const EdgeInsets.all(12),
               children: [
+                const AssetHeader(
+                  assetName: 'assets/identity/adaptive_icon.png',
+                  height: 48,
+                ),
+                const SizedBox(height: 12),
                 TextField(
                   decoration: const InputDecoration(
                     labelText: 'Food',
-                    hintText: 'Enter a food to check',
+                    hintText:
+                        'Enter a food to check, then use + or - to suggest',
                   ),
                   textInputAction: TextInputAction.search,
                   onChanged: _controller.updateQuery,
@@ -134,7 +145,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     final message = ok
-        ? 'Thanks. We will review "$query" and add it to the catalog when appropriate.'
+        ? 'We will review "$query" promptly and add it to our catalog when appropriate.'
         : 'Enter at least 3 characters and make sure the backend is reachable.';
     await showDialog<void>(
       context: context,
@@ -156,7 +167,7 @@ class _SearchScreenState extends State<SearchScreen> {
     required String suggestion,
   }) {
     if (state.query.trim().length < 3) {
-      return 'Enter a food name to search.';
+      return 'Enter at least 3 characters to search.';
     }
     if (state.isLoading) {
       return 'Searching...';

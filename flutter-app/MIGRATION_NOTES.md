@@ -34,5 +34,6 @@ On Windows, `flutter create --platforms=ios --org com.calypsosystems --project-n
 - Android package/application ID: `com.calypsosystems.aipfoodlookup`.
 - Android label: `AIP Food Lookup`.
 - App icon source: `assets/identity/app_icon.png`, migrated from the MAUI/recovered `icon.png`.
-- Splash source: `assets/identity/splash.png`, migrated from the MAUI/recovered `splash.png`.
+- Android splash source: `android/app/src/main/res/drawable-nodpi/splash_image.png`, generated as a padded app mark from `assets/identity/app_icon.png`.
+- Migrated splash artwork: `assets/identity/splash.png`, retained for later design review.
 - Additional MAUI/recovered images are stored under `assets/images/` for later screen-by-screen UI migration.
