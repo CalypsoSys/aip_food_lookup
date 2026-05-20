@@ -24,3 +24,4 @@ docker/aip_food_lookup.tar
 docker/.env
 data/suggested_allowed.txt
 data/suggested_not_allowed.txt
+.vscode/aip-local.env

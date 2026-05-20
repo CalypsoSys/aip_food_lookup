@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter: Galaxy S23",
+      "type": "dart",
+      "request": "launch",
+      "program": "${workspaceFolder}/flutter-app/lib/main.dart",
+      "cwd": "${workspaceFolder}/flutter-app",
+      "deviceId": "RFCWC06KQGF",
+      "toolArgs": [
+        "--dart-define-from-file",
+        "${workspaceFolder}/.vscode/aip-local.env"
+      ],
+      "preLaunchTask": "local: prepare phone launch",
+      "presentation": {
+        "group": "local",
+        "order": 1
+      }
+    }
+  ]
+}

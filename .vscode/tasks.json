@@ -1,0 +1,66 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "backend: go run",
+      "type": "shell",
+      "command": "go run .",
+      "options": {
+        "cwd": "${workspaceFolder}/cmd/aip_food_lookup",
+        "env": {
+          "AIP_DATA_FOLDER": "${workspaceFolder}/data"
+        }
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "custom",
+        "pattern": {
+          "regexp": "."
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": ".*"
+        }
+      },
+      "presentation": {
+        "group": "local",
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "backend: wait for ready",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$deadline = (Get-Date).AddSeconds(30); do { try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/ | Out-Null; exit 0 } catch { Start-Sleep -Milliseconds 500 } } while ((Get-Date) -lt $deadline); Write-Error 'Backend did not become ready on http://127.0.0.1:8080 within 30 seconds.'; exit 1\"",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: pub get",
+      "type": "process",
+      "command": "C:\\dev\\flutter\\bin\\flutter.bat",
+      "args": [
+        "pub",
+        "get"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/flutter-app"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "local: prepare phone launch",
+      "dependsOn": [
+        "backend: go run",
+        "backend: wait for ready",
+        "flutter: pub get"
+      ],
+      "dependsOrder": "sequence"
+    }
+  ]
+}
