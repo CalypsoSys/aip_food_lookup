@@ -29,4 +29,8 @@ void main() {
       'searchbytextandsound',
     );
   });
+
+  test('Subcategory normalization matches MAUI behavior', () {
+    expect(normalizeSubcategory('Herbs and Spices'), 'herbs_spices');
+  });
 }

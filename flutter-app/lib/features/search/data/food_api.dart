@@ -25,8 +25,28 @@ class FoodApi {
   Future<void> suggest(SuggestFoodRequest request) {
     return _client.postJson('/suggest', request.toJson());
   }
+
+  Future<SearchResult> categories() async {
+    final json = await _client.getJson('/categories');
+    return SearchResult.fromJson(json);
+  }
+
+  Future<SearchResult> subcategory(String category, String subcategory) async {
+    final json = await _client.getJson(
+      '/subcategory',
+      query: {
+        'cat': category,
+        'sub': normalizeSubcategory(subcategory),
+      },
+    );
+    return SearchResult.fromJson(json);
+  }
 }
 
 String normalizeSearchType(String value) {
   return value.replaceAll(' ', '').toLowerCase();
+}
+
+String normalizeSubcategory(String value) {
+  return value.replaceAll(' and ', '_').toLowerCase();
 }

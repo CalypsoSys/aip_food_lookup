@@ -4,11 +4,17 @@
     {
       "label": "backend: go run",
       "type": "shell",
-      "command": "go run .",
+      "command": "$env:AIP_DATA_FOLDER='${workspaceFolder}\\data'; try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/ | Out-Null; Write-Host 'Backend ready on http://127.0.0.1:8080'; while ($true) { Start-Sleep -Seconds 3600 } } catch { Write-Host 'Backend starting on http://127.0.0.1:8080'; go run . }",
       "options": {
         "cwd": "${workspaceFolder}/cmd/aip_food_lookup",
-        "env": {
-          "AIP_DATA_FOLDER": "${workspaceFolder}/data"
+        "shell": {
+          "executable": "powershell.exe",
+          "args": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command"
+          ]
         }
       },
       "isBackground": true,
@@ -19,8 +25,8 @@
         },
         "background": {
           "activeOnStart": true,
-          "beginsPattern": ".*",
-          "endsPattern": ".*"
+          "beginsPattern": "Backend (ready|starting)",
+          "endsPattern": "Backend (ready|starting)"
         }
       },
       "presentation": {
@@ -30,8 +36,15 @@
     },
     {
       "label": "backend: wait for ready",
-      "type": "shell",
-      "command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$deadline = (Get-Date).AddSeconds(30); do { try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/ | Out-Null; exit 0 } catch { Start-Sleep -Milliseconds 500 } } while ((Get-Date) -lt $deadline); Write-Error 'Backend did not become ready on http://127.0.0.1:8080 within 30 seconds.'; exit 1\"",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "$deadline = (Get-Date).AddSeconds(30); do { try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/ | Out-Null; exit 0 } catch { Start-Sleep -Milliseconds 500 } } while ((Get-Date) -lt $deadline); Write-Error 'Backend did not become ready on http://127.0.0.1:8080 within 30 seconds.'; exit 1"
+      ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
