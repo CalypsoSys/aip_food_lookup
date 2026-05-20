@@ -218,7 +218,7 @@ class _SearchScreenState extends State<SearchScreen> {
     required String suggestion,
   }) {
     if (state.query.trim().length < 3) {
-      return 'Enter at least 3 characters to search.';
+      return '';
     }
     if (state.isLoading) {
       return 'Searching...';
@@ -264,7 +264,7 @@ class _ResultSection extends StatelessWidget {
         child: ListTile(
           leading: Icon(icon, color: statusColor),
           title: Text(hasSearched ? '$title 0' : title),
-          subtitle: Text(fallback),
+          subtitle: fallback.isEmpty ? null : Text(fallback),
         ),
       );
     }
