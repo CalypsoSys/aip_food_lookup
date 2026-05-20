@@ -25,4 +25,14 @@ Milestone 1 includes a UI placeholder only. Production AdMob IDs must stay out o
 
 ## iOS
 
-iOS is planned structurally, but this milestone does not require a Mac. Once the Flutter SDK is available, iOS project files can be generated from macOS or a cloud build environment.
+iOS is planned structurally, but this milestone does not require a Mac. The migrated identity assets are committed under `assets/identity/` so the future iOS runner can use the same icon and splash sources.
+
+On Windows, `flutter create --platforms=ios --org com.calypsosystems --project-name aip_food_lookup .` hung before producing files, even with `--no-pub`. Re-run that command from a healthy Flutter install, macOS machine, or cloud build environment before the iOS build milestone.
+
+## App Identity
+
+- Android package/application ID: `com.calypsosystems.aipfoodlookup`.
+- Android label: `AIP Food Lookup`.
+- App icon source: `assets/identity/app_icon.png`, migrated from the MAUI/recovered `icon.png`.
+- Splash source: `assets/identity/splash.png`, migrated from the MAUI/recovered `splash.png`.
+- Additional MAUI/recovered images are stored under `assets/images/` for later screen-by-screen UI migration.

@@ -26,6 +26,12 @@ flutter run --dart-define=AIP_BACKEND_URL=http://10.0.2.2:8080
 
 Do not commit private backend URLs, production AdMob IDs, signing keys, tokens, or certificates.
 
+## App Identity Assets
+
+The Flutter app now carries migrated MAUI/recovered assets under `assets/identity/` and `assets/images/`. Android launcher icons are generated into `android/app/src/main/res/mipmap-*` from `assets/identity/app_icon.png`, and the native splash screen uses `assets/identity/splash.png`.
+
+Android uses the package/application ID `com.calypsosystems.aipfoodlookup` and the launcher label `AIP Food Lookup`. iOS remains planned for a later macOS/cloud build phase; the same committed identity assets should be used when generating the iOS runner.
+
 ## Current Milestone
 
 Milestone 1 includes a Flutter project foundation, bottom navigation, app theme, API client, DTO models, Search flow, Categories route scaffold, test ad placeholder, and unit tests for DTO behavior.
