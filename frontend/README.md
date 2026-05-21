@@ -26,6 +26,19 @@ npm run test
 npm run build
 ```
 
+The app uses Vue Router with history URLs:
+
+```text
+/search
+/categories
+/about
+/feedback
+/diagnostics
+```
+
+Cloudflare Pages should publish the Vite build output from `dist/`. The
+`public/_redirects` file keeps routed browser refreshes on `index.html`.
+
 Run the Go API locally before starting Vite:
 
 ```powershell

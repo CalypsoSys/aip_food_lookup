@@ -1,4 +1,10 @@
-import type { CategoriesResult, FeedbackRequest, SearchResult, SearchType } from '@/types';
+import type {
+  CategoriesResult,
+  FeedbackRequest,
+  SearchResult,
+  SearchType,
+  SuggestionRequest,
+} from '@/types';
 
 const apiBaseUrl = (import.meta.env.VITE_AIP_API_BASE_URL || '/api').replace(/\/$/, '');
 
@@ -10,6 +16,10 @@ export const searchTypes: SearchType[] = [
 
 export function normalizeSearchType(value: SearchType): string {
   return value.replace(/\s/g, '').toLowerCase();
+}
+
+export function normalizeSubcategory(value: string): string {
+  return value.replace(/\sand\s/g, '_').toLowerCase();
 }
 
 export function readSearchResult(json: unknown): SearchResult {
@@ -34,8 +44,35 @@ export async function loadCategories(): Promise<CategoriesResult> {
   return readSearchResult(json);
 }
 
+export async function loadSubcategory(category: string, subcategory: string): Promise<SearchResult> {
+  const params = new URLSearchParams({
+    cat: category,
+    sub: normalizeSubcategory(subcategory),
+  });
+  const json = await getJson(`${apiBaseUrl}/subcategory?${params.toString()}`);
+  return readSearchResult(json);
+}
+
+export async function submitSuggestion(request: SuggestionRequest): Promise<void> {
+  await postJson(`${apiBaseUrl}/suggest`, request);
+}
+
 export async function submitFeedback(request: FeedbackRequest): Promise<void> {
   await postJson(`${apiBaseUrl}/feedback`, request);
+}
+
+export async function checkHealth(): Promise<string> {
+  const response = await fetch(`${apiBaseUrl}/`, {
+    headers: {
+      Accept: 'text/plain',
+      'X-AIP-Client': 'web',
+      'X-AIP-App-Version': import.meta.env.VITE_AIP_APP_VERSION || 'dev',
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`API request failed with status ${response.status}`);
+  }
+  return response.text();
 }
 
 async function getJson(url: string): Promise<unknown> {

@@ -13,7 +13,14 @@ export interface FeedbackRequest {
   source: 'web';
 }
 
+export interface SuggestionRequest {
+  inputText: string;
+  allowed: boolean;
+}
+
 export interface CategoriesResult {
   allowed: string[];
   notAllowed: string[];
 }
+
+export type CategoryKind = 'Allowed' | 'Not Allowed';
