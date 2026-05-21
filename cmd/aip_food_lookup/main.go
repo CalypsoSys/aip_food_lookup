@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/CalypsoSys/godoublemetaphone/pkg/godoublemetaphone"
 )
@@ -67,6 +68,7 @@ type feedbackSink interface {
 
 type fileFeedbackSink struct {
 	dataFolder string
+	filePath   string
 }
 
 var store = newFoodStore("")
@@ -85,52 +87,47 @@ func newFoodStore(dataFolder string) *foodStore {
 }
 
 func main() {
-	dataFolder := os.Getenv("AIP_DATA_FOLDER")
-	if dataFolder == "" {
-		dataFolder = "data"
-	}
+	config := loadConfig()
 
-	store = newFoodStore(dataFolder)
-	if err := store.processDirectory(dataFolder); err != nil {
+	store = newFoodStore(config.DataFolder)
+	store.feedbackSink = newFeedbackSink(config)
+	if err := store.processDirectory(config.DataFolder); err != nil {
 		fmt.Println("error loading data:", err)
 	}
 
-	http.HandleFunc("/", healthHandler)
-	http.HandleFunc("/search", searchHandler)
-	http.HandleFunc("/suggest", suggestHandler)
-	http.HandleFunc("/feedback", feedbackHandler)
-	http.HandleFunc("/categories", categoriesHandler)
-	http.HandleFunc("/subcategory", subCategoryHandler)
+	mux := http.NewServeMux()
+	registerHandlers(mux)
 
-	err := http.ListenAndServe(":8080", nil)
+	server := &http.Server{
+		Addr:              config.ListenAddress,
+		Handler:           buildHTTPHandler(config, mux),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	err := server.ListenAndServe()
 	fmt.Println(err)
+}
+
+func registerHandlers(mux *http.ServeMux) {
+	mux.HandleFunc("/", healthHandler)
+	mux.HandleFunc("/search", searchHandler)
+	mux.HandleFunc("/suggest", suggestHandler)
+	mux.HandleFunc("/feedback", feedbackHandler)
+	mux.HandleFunc("/categories", categoriesHandler)
+	mux.HandleFunc("/subcategory", subCategoryHandler)
 }
 
 // healthHandler gives load balancers and local smoke tests a simple API check.
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-	setCORS(w, r)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = fmt.Fprint(w, "AIP Food Lookup API")
 }
 
-// setCORS applies permissive CORS headers for the mobile and web clients.
-func setCORS(w http.ResponseWriter, r *http.Request) bool {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusOK)
-		return true
-	}
-	return false
-}
-
 // feedbackHandler validates app feedback and stores it for later Slack plumbing.
 func feedbackHandler(w http.ResponseWriter, r *http.Request) {
-	if setCORS(w, r) {
-		return
-	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -158,10 +155,6 @@ func feedbackHandler(w http.ResponseWriter, r *http.Request) {
 
 // searchHandler returns matching allowed and not allowed foods for a query.
 func searchHandler(w http.ResponseWriter, r *http.Request) {
-	if setCORS(w, r) {
-		return
-	}
-
 	key := strings.TrimSpace(r.URL.Query().Get("key"))
 	if key == "" {
 		http.Error(w, "Key parameter is missing", http.StatusBadRequest)
@@ -174,10 +167,6 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 
 // suggestHandler records user suggestions after basic length and ASCII cleanup.
 func suggestHandler(w http.ResponseWriter, r *http.Request) {
-	if setCORS(w, r) {
-		return
-	}
-
 	var request requestData
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "Error decoding JSON", http.StatusBadRequest)
@@ -204,10 +193,6 @@ func suggestHandler(w http.ResponseWriter, r *http.Request) {
 
 // categoriesHandler returns the available top-level allowed/not allowed groups.
 func categoriesHandler(w http.ResponseWriter, r *http.Request) {
-	if setCORS(w, r) {
-		return
-	}
-
 	commonResponse(w, responseData{
 		Allowed:    store.allowedCategories,
 		NotAllowed: store.notAllowedCategories,
@@ -216,10 +201,6 @@ func categoriesHandler(w http.ResponseWriter, r *http.Request) {
 
 // subCategoryHandler returns foods for one allowed/not allowed category group.
 func subCategoryHandler(w http.ResponseWriter, r *http.Request) {
-	if setCORS(w, r) {
-		return
-	}
-
 	category := r.URL.Query().Get("cat")
 	if category == "" {
 		http.Error(w, "Category parameter is missing", http.StatusBadRequest)
@@ -449,7 +430,14 @@ func (s *foodStore) processDirectory(directoryPath string) error {
 
 // submitFeedback writes one JSON line until a Slack sink is added later.
 func (s fileFeedbackSink) submitFeedback(request feedbackRequest) error {
-	filePath := path.Join(s.dataFolder, "feedback.jsonl")
+	filePath := s.filePath
+	if filePath == "" {
+		filePath = path.Join(s.dataFolder, "feedback.jsonl")
+	}
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+		return err
+	}
+
 	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return err

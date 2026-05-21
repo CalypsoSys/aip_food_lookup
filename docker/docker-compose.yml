@@ -1,23 +1,28 @@
-version: "3"
-
 services:
-  aip_food_lookup:
-    image: aip_food_lookup:latest
-    expose:
-      - 8080
-    restart: always
+  aip-food-lookup-api:
+    image: ${AIP_API_IMAGE:-aip-food-lookup-api:latest}
+    container_name: aip-food-lookup-api
+    restart: unless-stopped
+    ports:
+      - "${AIP_API_HOST_BIND:-127.0.0.1}:${AIP_API_HOST_PORT:-8084}:8080"
     volumes:
-      - ../data:/var/log/data
+      - ${AIP_DATA_HOST_PATH:-/srv/stacks/aip-food-lookup/data}:/app/data
+      - ${AIP_LOGS_HOST_PATH:-/srv/logs/aip-food-lookup/api}:/app/logs
     environment:
-      AIP_DATA_FOLDER: /var/log/data
-      VIRTUAL_HOST: ${AIP_FOOD_LOOKUP_HOST}
-      LETSENCRYPT_HOST: ${AIP_FOOD_LOOKUP_HOST}
-      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
-    container_name: aip_food_lookup
-volumes:
-  db_data:
-
-networks:
-  default:
-    external:
-      name: nginx-proxy
+      AIP__API__ListenAddress: ${AIP__API__ListenAddress:-:8080}
+      AIP__API__DataFolder: ${AIP__API__DataFolder:-/app/data}
+      AIP__API__AccessLogPath: ${AIP__API__AccessLogPath:-/app/logs/access.log}
+      AIP__API__ErrorLogPath: ${AIP__API__ErrorLogPath:-/app/logs/errors.log}
+      AIP__API__AllowedOrigins__0: ${AIP__API__AllowedOrigins__0}
+      AIP__API__AllowedOrigins__1: ${AIP__API__AllowedOrigins__1}
+      AIP__API__RequireGatewaySecret: ${AIP__API__RequireGatewaySecret}
+      AIP__API__GatewaySecretHeaderName: ${AIP__API__GatewaySecretHeaderName}
+      AIP__API__GatewaySecret: ${AIP__API__GatewaySecret}
+      AIP__API__SlackFeedbackWebhookUrl: ${AIP__API__SlackFeedbackWebhookUrl}
+      AIP__API__FeedbackJSONLPath: ${AIP__API__FeedbackJSONLPath:-/app/data/feedback.jsonl}
+      AIP__API__RequestBodyLimitBytes: ${AIP__API__RequestBodyLimitBytes:-32768}
+      AIP__API__RateLimit__Enabled: ${AIP__API__RateLimit__Enabled}
+      AIP__API__RateLimit__SearchPermitLimit: ${AIP__API__RateLimit__SearchPermitLimit}
+      AIP__API__RateLimit__WritePermitLimit: ${AIP__API__RateLimit__WritePermitLimit}
+      AIP__API__RateLimit__FeedbackPermitLimit: ${AIP__API__RateLimit__FeedbackPermitLimit}
+      AIP__API__RateLimit__WindowSeconds: ${AIP__API__RateLimit__WindowSeconds}

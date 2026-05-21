@@ -4,9 +4,14 @@ import 'dart:io';
 import 'api_exception.dart';
 
 class ApiClient {
-  ApiClient({required String baseUrl}) : _baseUri = Uri.parse(baseUrl);
+  ApiClient({
+    required String baseUrl,
+    Map<String, String> defaultHeaders = const {},
+  })  : _baseUri = Uri.parse(baseUrl),
+        _defaultHeaders = Map.unmodifiable(defaultHeaders);
 
   final Uri _baseUri;
+  final Map<String, String> _defaultHeaders;
   final HttpClient _client = HttpClient();
 
   Future<Map<String, dynamic>> getJson(
@@ -15,6 +20,7 @@ class ApiClient {
   }) async {
     final uri = _buildUri(path, query);
     final request = await _client.getUrl(uri);
+    _applyDefaultHeaders(request);
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     final response = await request.close();
     return _decodeObjectResponse(response);
@@ -23,6 +29,7 @@ class ApiClient {
   Future<void> postJson(String path, Map<String, dynamic> body) async {
     final uri = _buildUri(path);
     final request = await _client.postUrl(uri);
+    _applyDefaultHeaders(request);
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
     request.write(jsonEncode(body));
@@ -36,6 +43,7 @@ class ApiClient {
   Future<String> getText(String path) async {
     final uri = _buildUri(path);
     final request = await _client.getUrl(uri);
+    _applyDefaultHeaders(request);
     request.headers.set(HttpHeaders.acceptHeader, 'text/plain');
     final response = await request.close();
     final text = await response.transform(utf8.decoder).join();
@@ -51,6 +59,12 @@ class ApiClient {
       path: normalizedPath,
       queryParameters: query,
     );
+  }
+
+  void _applyDefaultHeaders(HttpClientRequest request) {
+    for (final entry in _defaultHeaders.entries) {
+      request.headers.set(entry.key, entry.value);
+    }
   }
 
   Future<Map<String, dynamic>> _decodeObjectResponse(

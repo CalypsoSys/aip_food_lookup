@@ -38,7 +38,10 @@ class DiagnosticsController extends ValueNotifier<DiagnosticsState> {
     AppConfig config = AppConfig.dev,
     HealthCheck? healthCheck,
   })  : _healthCheck = healthCheck ??
-            (() => ApiClient(baseUrl: config.backendBaseUrl).getText('/')),
+            (() => ApiClient(
+                      baseUrl: config.backendBaseUrl,
+                      defaultHeaders: config.publicHeaders,
+                    ).getText('/')),
         super(DiagnosticsState(backendUrl: config.backendBaseUrl));
 
   final HealthCheck _healthCheck;

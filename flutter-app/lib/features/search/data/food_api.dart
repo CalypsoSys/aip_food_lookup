@@ -7,7 +7,12 @@ class FoodApi {
   FoodApi({
     ApiClient? client,
     AppConfig config = AppConfig.dev,
-  }) : _client = client ?? ApiClient(baseUrl: config.backendBaseUrl);
+  }) : _client =
+            client ??
+            ApiClient(
+              baseUrl: config.backendBaseUrl,
+              defaultHeaders: config.publicHeaders,
+            );
 
   final ApiClient _client;
 

@@ -1,0 +1,31 @@
+# Copy this file to scripts/aip/config.local.yaml for local Docker testing
+# or to /srv/stacks/aip-food-lookup/api/config.yaml on the production host.
+# Values written as ${VARIABLE_NAME} are resolved from the process environment by babalu_yaml_env.
+
+AIP_API_IMAGE: aip-food-lookup-api:latest
+AIP_API_HOST_BIND: 127.0.0.1
+AIP_API_HOST_PORT: 8084
+AIP_DATA_HOST_PATH: /srv/stacks/aip-food-lookup/data
+AIP_LOGS_HOST_PATH: /srv/logs/aip-food-lookup/api
+
+AIP:
+  API:
+    ListenAddress: :8080
+    DataFolder: /app/data
+    AccessLogPath: /app/logs/access.log
+    ErrorLogPath: /app/logs/errors.log
+    AllowedOrigins:
+      - https://hashimojoe.com
+      - https://www.hashimojoe.com
+    RequireGatewaySecret: true
+    GatewaySecretHeaderName: X-Internal-Api-Key
+    GatewaySecret: ${AIP_GATEWAY_SECRET}
+    SlackFeedbackWebhookUrl: ${AIP_SLACK_FEEDBACK_WEBHOOK_URL}
+    FeedbackJSONLPath: /app/data/feedback.jsonl
+    RequestBodyLimitBytes: 32768
+    RateLimit:
+      Enabled: true
+      SearchPermitLimit: 300
+      WritePermitLimit: 60
+      FeedbackPermitLimit: 10
+      WindowSeconds: 60
