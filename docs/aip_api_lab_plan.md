@@ -4,10 +4,11 @@ This document records the target production shape for AIP Food Lookup.
 
 ## Goals
 
-- Serve the public API at `api.hashimojoe.com`.
+- Serve the web app at `hashimojoe.com` with same-origin `/api/*` calls.
 - Run the Go API in Joe's lab on host port `8084`.
-- Put Cloudflare Worker in front of the mobile API so the mobile app never contains the internal gateway secret.
-- Route the Worker to the lab through Cloudflare Tunnel and host-installed Caddy.
+- Put Cloudflare Pages Functions in front of the web API so browser code never contains the internal gateway secret.
+- Keep a separate mobile API hostname optional for Flutter if needed later.
+- Route the public gateway to the lab through Cloudflare Tunnel and host-installed Caddy.
 - Use Docker Compose rendered from YAML by `babalu_yaml_env`.
 - Keep file-based food data and runtime suggestion/feedback files; do not add a database.
 - Send feedback to Slack, with local JSONL fallback.
@@ -17,8 +18,7 @@ This document records the target production shape for AIP Food Lookup.
 
 ```text
 Flutter Android app
-  -> https://api.hashimojoe.com
-  -> Cloudflare Worker
+  -> public gateway route, if separate mobile API hostname is enabled
   -> Cloudflare Tunnel origin hostname
   -> host Caddy
   -> http://127.0.0.1:8084
@@ -26,18 +26,21 @@ Flutter Android app
   -> /srv/stacks/aip-food-lookup/data mounted into the container
 ```
 
-Future web presence:
+Web presence:
 
 ```text
 https://hashimojoe.com
-  -> static site or Pages app
-  -> https://api.hashimojoe.com for lookups
+  -> Cloudflare Pages app
+  -> same-origin /api/* Pages Function
+  -> Cloudflare Tunnel origin hostname
+  -> host Caddy
+  -> http://127.0.0.1:8084
 ```
 
-## Mobile gateway key rule
+## Gateway key rule
 
-Do not ship `AIP_GATEWAY_SECRET` in Flutter. Mobile apps are inspectable, so the internal key belongs only in
-Cloudflare Worker configuration and on the API host.
+Do not ship `AIP_GATEWAY_SECRET` in Flutter or browser code. Clients are inspectable, so the internal key belongs only
+in Cloudflare server-side configuration and on the API host.
 
 The mobile app may send public diagnostic headers such as:
 
@@ -68,5 +71,5 @@ The current Go API reads flattened environment variables such as:
 - Docker Compose renders from YAML.
 - Caddy routes the origin hostname to `127.0.0.1:8084`.
 - Protected API routes return `401` without `X-Internal-Api-Key` in production.
-- Worker-injected requests reach the API.
+- Gateway-injected requests reach the API.
 - Feedback reaches Slack or writes one JSON object per line to `feedback.jsonl`.

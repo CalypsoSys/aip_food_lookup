@@ -17,6 +17,30 @@
         "group": "local",
         "order": 1
       }
+    },
+    {
+      "name": "Web: Local frontend + API",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://127.0.0.1:5173",
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "preLaunchTask": "local: prepare web launch",
+      "presentation": {
+        "group": "local",
+        "order": 2
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Local: frontend + API",
+      "configurations": [
+        "Web: Local frontend + API"
+      ],
+      "presentation": {
+        "group": "local",
+        "order": 1
+      }
     }
   ]
 }

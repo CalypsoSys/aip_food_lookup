@@ -4,11 +4,11 @@ This document describes host-installed Caddy for AIP Food Lookup behind Cloudfla
 
 ## Goal
 
-Cloudflare Worker handles `api.hashimojoe.com` and forwards to the tunnel origin hostname. Caddy receives the origin
-request and proxies it to the local Docker-published API port.
+Cloudflare Pages Functions handle same-origin `/api/*` requests from `hashimojoe.com` and forward to the tunnel origin
+hostname. Caddy receives the origin request and proxies it to the local Docker-published API port.
 
 ```text
-api.hashimojoe.com Worker
+hashimojoe.com Pages Function /api/*
   -> aip-origin.hashimojoe.com tunnel
   -> Caddy
   -> 127.0.0.1:8084

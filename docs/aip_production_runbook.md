@@ -59,8 +59,15 @@ Required secret inputs:
 
 | Name | Purpose |
 | --- | --- |
-| `AIP_GATEWAY_SECRET` | Internal key injected by Cloudflare Worker |
+| `AIP_GATEWAY_SECRET` | Internal key injected by Cloudflare Pages Functions or another public gateway |
 | `AIP_SLACK_FEEDBACK_WEBHOOK_URL` | Slack webhook for feedback |
+
+For the web frontend, configure these Cloudflare Pages environment bindings:
+
+| Name | Purpose |
+| --- | --- |
+| `AIP_ORIGIN_BASE_URL` | Tunnel/Caddy origin URL, for example `https://aip-origin.hashimojoe.com` |
+| `AIP_GATEWAY_SECRET` | Same internal key configured on the Go API host |
 
 ## Build image
 
@@ -82,6 +89,7 @@ Copy these files to `/srv/stacks/aip-food-lookup/api`:
 
 - `docker/docker-compose.yml`
 - `scripts/aip/compose-aip.sh`
+- `scripts/aip/smoke-local-docker.sh`
 - `scripts/aip/aip.logrotate`
 - `docker/aip-food-lookup-api-latest.tar.gz`
 - the built `render-config-env` binary from `repos/babalu-yaml-env`
@@ -95,6 +103,12 @@ chmod +x scripts/compose-aip.sh scripts/render-config-env
 scripts/compose-aip.sh config
 scripts/compose-aip.sh up -d
 scripts/compose-aip.sh ps
+```
+
+For a host-level smoke test after deploy:
+
+```bash
+AIP_GATEWAY_SECRET="<same secret used by public gateway>" scripts/smoke-local-docker.sh
 ```
 
 ## Validate

@@ -46,7 +46,39 @@ For production builds, point the app at:
 https://api.hashimojoe.com
 ```
 
-Do not pass or compile `AIP_GATEWAY_SECRET` into Flutter. The Cloudflare Worker owns that internal key.
+Do not pass or compile `AIP_GATEWAY_SECRET` into Flutter. The public gateway owns that internal key.
+
+## Web frontend
+
+The web starter lives in `frontend/` and uses Vue 3, TypeScript, Vite, Pinia, and Vitest.
+
+Run the Go API on `127.0.0.1:8080`, then:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open:
+
+```text
+http://127.0.0.1:5173
+```
+
+Local web API calls use `/api/*`. Vite proxies those requests to `http://127.0.0.1:8080` and removes the `/api`
+prefix. Production web builds should keep the same-origin default:
+
+```text
+VITE_AIP_API_BASE_URL=/api
+```
+
+Cloudflare Pages Functions handle the production `/api/*` proxy and inject the internal gateway key from server-side
+Pages environment bindings. Do not put `X-Internal-Api-Key`, `AIP_GATEWAY_SECRET`, or Slack webhook values in frontend
+code or browser-exposed frontend env files.
+
+VS Code includes a `Local: frontend + API` compound launch. It starts the Go API and Vite as hidden background tasks,
+then opens the web frontend in a visible browser debug session.
 
 ## Docker config render
 
@@ -68,3 +100,33 @@ Then test compose rendering:
 ```bash
 scripts/aip/compose-aip.sh config
 ```
+
+## Local Docker smoke test
+
+After building/loading `aip-food-lookup-api:latest`, copy the sample config:
+
+```bash
+cp scripts/aip/config.example.yaml scripts/aip/config.local.yaml
+```
+
+For local smoke testing, keep these values in `scripts/aip/config.local.yaml` or provide them through your shell:
+
+```yaml
+AIP_API_HOST_BIND: 127.0.0.1
+AIP_API_HOST_PORT: 8084
+AIP_DATA_HOST_PATH: ${AIP_REPO_ROOT}/data
+AIP_LOGS_HOST_PATH: ${AIP_REPO_ROOT}/logs/aip-api
+```
+
+Then run:
+
+```bash
+AIP_GATEWAY_SECRET=local-smoke-secret scripts/aip/smoke-local-docker.sh
+```
+
+The smoke test starts Docker Compose and verifies:
+
+- `GET /` returns `200`
+- unkeyed `GET /search?key=apple` returns `401`
+- keyed `GET /search?key=apple` returns `200`
+- keyed `POST /feedback` returns `200`
