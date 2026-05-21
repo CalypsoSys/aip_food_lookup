@@ -19,7 +19,7 @@
       }
     },
     {
-      "name": "Web: Local frontend + API",
+      "name": "_web_frontend_internal",
       "type": "pwa-chrome",
       "request": "launch",
       "url": "http://127.0.0.1:5173",
@@ -27,7 +27,8 @@
       "preLaunchTask": "local: prepare web launch",
       "presentation": {
         "group": "local",
-        "order": 2
+        "order": 2,
+        "hidden": true
       }
     }
   ],
@@ -35,7 +36,7 @@
     {
       "name": "Local: frontend + API",
       "configurations": [
-        "Web: Local frontend + API"
+        "_web_frontend_internal"
       ],
       "presentation": {
         "group": "local",
