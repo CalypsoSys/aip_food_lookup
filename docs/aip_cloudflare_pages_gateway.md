@@ -10,7 +10,7 @@ Recommended web and origin hostnames:
 
 ```text
 hashimojoe.com              Cloudflare Pages site and /api gateway used by browser and Flutter clients
-aip-origin.hashimojoe.com   Cloudflare Tunnel hostname that reaches host Caddy
+aip.hashimojoe.com          Cloudflare Tunnel hostname that reaches host Caddy
 ```
 
 The origin hostname should not be used by clients. If it is reached directly, the Go API should reject protected routes
@@ -40,7 +40,7 @@ Configure these in Cloudflare Pages, not in Git:
 
 ```text
 AIP_GATEWAY_SECRET
-AIP_ORIGIN_BASE_URL=https://aip-origin.hashimojoe.com
+AIP_ORIGIN_BASE_URL=https://aip.hashimojoe.com
 ```
 
 ## Pages Function implementation

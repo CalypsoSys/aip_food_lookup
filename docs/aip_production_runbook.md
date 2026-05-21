@@ -66,7 +66,7 @@ For the web frontend, configure these Cloudflare Pages environment bindings:
 
 | Name | Purpose |
 | --- | --- |
-| `AIP_ORIGIN_BASE_URL` | Tunnel/Caddy origin URL, for example `https://aip-origin.hashimojoe.com` |
+| `AIP_ORIGIN_BASE_URL` | Tunnel/Caddy origin URL, for example `https://aip.hashimojoe.com` |
 | `AIP_GATEWAY_SECRET` | Same internal key configured on the Go API host |
 
 ## Build image
