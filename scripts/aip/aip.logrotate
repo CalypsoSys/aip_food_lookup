@@ -1,0 +1,12 @@
+/srv/logs/aip-food-lookup/api/access.log
+/srv/logs/aip-food-lookup/api/errors.log {
+    daily
+    rotate 14
+    missingok
+    compress
+    delaycompress
+    notifempty
+    copytruncate
+    su root root
+    create 0644 root root
+}

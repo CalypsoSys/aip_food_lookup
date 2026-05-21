@@ -1,0 +1,11 @@
+/srv/logs/caddy/caddy.log {
+    daily
+    rotate 14
+    missingok
+    compress
+    delaycompress
+    notifempty
+    copytruncate
+    su caddy caddy
+    create 0644 caddy caddy
+}

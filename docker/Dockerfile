@@ -1,11 +1,9 @@
-# Start from scratch (empty image)
-FROM scratch
+FROM alpine:3.20
 
-# Copy the binary built from the local machine
-COPY aip_food_lookup /.
+RUN apk add --no-cache ca-certificates
 
-# Expose the port that the application will run on
+COPY aip_food_lookup /usr/local/bin/aip_food_lookup
+
 EXPOSE 8080
 
-# Command to run the application
-CMD ["/aip_food_lookup"]
+CMD ["/usr/local/bin/aip_food_lookup"]

@@ -11,7 +11,7 @@ cd C:\CalypsoSystems\aip_food_lookup\flutter-app
 flutter pub get
 flutter analyze
 flutter test
-flutter run --dart-define=AIP_BACKEND_URL=http://10.0.2.2:8080
+flutter run --dart-define=AIP_BACKEND_URL=http://10.0.2.2:8080 --dart-define=AIP_CLIENT_NAME=android --dart-define=AIP_APP_VERSION=dev
 ```
 
 For a physical Android device, replace `10.0.2.2` with the Windows machine LAN IP address that can reach the Go backend.
@@ -21,10 +21,12 @@ For a physical Android device, replace `10.0.2.2` with the Windows machine LAN I
 The backend URL is supplied at build/run time:
 
 ```powershell
-flutter run --dart-define=AIP_BACKEND_URL=http://10.0.2.2:8080
+flutter run --dart-define=AIP_BACKEND_URL=http://10.0.2.2:8080 --dart-define=AIP_CLIENT_NAME=android --dart-define=AIP_APP_VERSION=dev
 ```
 
 Do not commit private backend URLs, production AdMob IDs, signing keys, tokens, or certificates.
+Do not put the internal API gateway secret in Flutter; `api.hashimojoe.com` is expected to run through a Cloudflare
+Worker that injects the secret server-side.
 
 The app includes an About tab with links to Feedback and Diagnostics. Diagnostics shows the active backend URL and can test the `/` health endpoint. Use it when switching between emulator URLs and physical-phone LAN URLs.
 

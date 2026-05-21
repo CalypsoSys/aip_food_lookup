@@ -1,28 +1,24 @@
-#!/bin/bash
-export GOPATH=$GOPATH:$(pwd)
+#!/usr/bin/env bash
 
-echo "aip_food_lookup"
-#GOOS=linux GOARCH=amd64 go build -o ./docker/aip_food_lookup ./cmd/aip_food_lookup/*.go
-cd ./cmd/aip_food_lookup
-CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ../../docker/aip_food_lookup .
-cd ../..
+set -euo pipefail
 
-cd ./docker
-sudo docker build -t aip_food_lookup .
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+IMAGE_NAME="${AIP_API_IMAGE:-aip-food-lookup-api:latest}"
+TRANSFER_DIR="${TRANSFER_DIR:-/mnt/c/transfer}"
+TAR_PATH="$REPO_ROOT/docker/aip-food-lookup-api-latest.tar"
 
-sudo docker rmi -f $(sudo docker images -f "dangling=true" -q)
-sudo docker save aip_food_lookup > aip_food_lookup.tar
-cp aip_food_lookup.tar /mnt/c/transfer/.
+echo "Building aip_food_lookup API binary"
+cd "$REPO_ROOT/cmd/aip_food_lookup"
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o "$REPO_ROOT/docker/aip_food_lookup" .
 
-#sudo docker run -p 8080:8080 aip_food_lookup
+echo "Building Docker image $IMAGE_NAME"
+cd "$REPO_ROOT"
+docker build -t "$IMAGE_NAME" -f docker/Dockerfile docker
 
-#curl http://localhost:8080
+docker image prune -f --filter "dangling=true"
+docker save "$IMAGE_NAME" -o "$TAR_PATH"
+gzip -f "$TAR_PATH"
 
-#1. copy aip_food_lookup.tar /home/calypso/docker
-#2. cd /home/calypso/docker/aip_food_lookup_go
-#3. sudo docker-compose down
-#4. cd /home/calypso/docker/
-#5. sudo docker load < aip_food_lookup.tar
-#6. sudo docker rmi -f $(sudo docker images -f "dangling=true" -q)
-#7. cd /home/calypso/docker/aip_food_lookup_go
-#9. sudo docker-compose up -d
+mkdir -p "$TRANSFER_DIR"
+cp "$TAR_PATH.gz" "$TRANSFER_DIR/"
+echo "Wrote $TAR_PATH.gz"
