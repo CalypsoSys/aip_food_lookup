@@ -56,8 +56,8 @@ Run the Go API on `127.0.0.1:8080`, then:
 
 ```bash
 cd frontend
-npm install
-npm run dev
+pnpm install --frozen-lockfile
+pnpm run dev
 ```
 
 Open:
@@ -76,6 +76,12 @@ VITE_AIP_API_BASE_URL=/api
 Cloudflare Pages Functions handle the production `/api/*` proxy and inject the internal gateway key from server-side
 Pages environment bindings. Do not put `X-Internal-Api-Key`, `AIP_GATEWAY_SECRET`, or Slack webhook values in frontend
 code or browser-exposed frontend env files.
+
+Standard frontend verification is:
+
+```bash
+pnpm install --frozen-lockfile && pnpm run build
+```
 
 VS Code includes a `Local: frontend + API` compound launch. It starts the Go API and Vite as hidden background tasks,
 then opens the web frontend in a visible browser debug session.

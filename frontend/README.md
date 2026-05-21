@@ -20,10 +20,16 @@ backend URLs in frontend code or browser-exposed environment files.
 ## Commands
 
 ```powershell
-npm install
-npm run dev
-npm run test
-npm run build
+pnpm install --frozen-lockfile
+pnpm run dev
+pnpm run test
+pnpm run build
+```
+
+Standard frontend verification:
+
+```powershell
+pnpm install --frozen-lockfile && pnpm run build
 ```
 
 The app uses Vue Router with history URLs:

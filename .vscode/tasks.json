@@ -68,11 +68,13 @@
       "problemMatcher": []
     },
     {
-      "label": "frontend: npm install",
+      "label": "frontend: pnpm install",
       "type": "process",
-      "command": "npm",
+      "command": "corepack",
       "args": [
-        "install"
+        "pnpm",
+        "install",
+        "--frozen-lockfile"
       ],
       "options": {
         "cwd": "${workspaceFolder}/frontend"
@@ -86,8 +88,9 @@
     {
       "label": "frontend: dev",
       "type": "process",
-      "command": "npm",
+      "command": "corepack",
       "args": [
+        "pnpm",
         "run",
         "dev",
         "--",
@@ -150,7 +153,7 @@
       "dependsOn": [
         "backend: go run",
         "backend: wait for ready",
-        "frontend: npm install",
+        "frontend: pnpm install",
         "frontend: dev",
         "frontend: wait for ready"
       ],
