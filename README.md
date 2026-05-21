@@ -8,10 +8,11 @@ The Go backend lives in `cmd/aip_food_lookup` and serves:
 
 - `GET /search?key=<text>&type=<searchbytextandsound|searchbytext|searchbysound>`
 - `POST /suggest`
+- `POST /feedback`
 - `GET /categories`
 - `GET /subcategory?cat=<Allowed|Not Allowed>&sub=<subcategory>`
 
-Food data is stored in `data/allowed` and `data/not_allowed`. Runtime suggestion files are ignored by git.
+Food data is stored in `data/allowed` and `data/not_allowed`. Runtime suggestion and feedback files are ignored by git. Feedback currently writes to `data/feedback.jsonl` as plumbing for a future Slack notifier; no Slack webhook or secret is stored in this repository.
 
 Run locally:
 

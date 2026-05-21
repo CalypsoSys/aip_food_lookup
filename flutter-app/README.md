@@ -28,6 +28,8 @@ Do not commit private backend URLs, production AdMob IDs, signing keys, tokens, 
 
 The app includes a Diagnostics tab that shows the active backend URL and can test the `/` health endpoint. Use it when switching between emulator URLs and physical-phone LAN URLs.
 
+Diagnostics also links to a Feedback screen. Feedback posts to the Go backend `/feedback` endpoint; Slack delivery is intentionally deferred until webhook configuration is added server-side.
+
 ## App Identity Assets
 
 The Flutter app now carries migrated MAUI/recovered assets under `assets/identity/` and `assets/images/`. Android launcher icons are generated into `android/app/src/main/res/mipmap-*` from `assets/identity/app_icon.png`, and the native splash screen uses a padded app-mark image generated from the same source.

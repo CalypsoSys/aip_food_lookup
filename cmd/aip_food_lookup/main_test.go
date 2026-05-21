@@ -67,6 +67,46 @@ func TestSuggestHandlerRejectsShortSuggestion(t *testing.T) {
 	}
 }
 
+func TestFeedbackHandlerWritesValidFeedback(t *testing.T) {
+	tempDir := t.TempDir()
+	store = newFoodStore(tempDir)
+
+	body := strings.NewReader(`{"name":"Joe","email":"","subject":"","message":"Great app","source":"mobile"}`)
+	request := httptest.NewRequest(http.MethodPost, "/feedback", body)
+	response := httptest.NewRecorder()
+
+	feedbackHandler(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", response.Code, response.Body.String())
+	}
+
+	content, err := os.ReadFile(filepath.Join(tempDir, "feedback.jsonl"))
+	if err != nil {
+		t.Fatalf("expected feedback file to be written: %v", err)
+	}
+	if !strings.Contains(string(content), `"message":"Great app"`) {
+		t.Fatalf("expected feedback message in file, got %q", string(content))
+	}
+	if !strings.Contains(string(content), `"subject":"App feedback"`) {
+		t.Fatalf("expected default feedback subject, got %q", string(content))
+	}
+}
+
+func TestFeedbackHandlerRequiresNameOrEmailAndMessage(t *testing.T) {
+	store = newFoodStore(t.TempDir())
+
+	body := strings.NewReader(`{"message":"","source":"mobile"}`)
+	request := httptest.NewRequest(http.MethodPost, "/feedback", body)
+	response := httptest.NewRecorder()
+
+	feedbackHandler(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", response.Code)
+	}
+}
+
 func TestSearchHandlerReturnsJsonResults(t *testing.T) {
 	store = newFoodStore("../../data")
 	if err := store.processDirectory("../../data"); err != nil {

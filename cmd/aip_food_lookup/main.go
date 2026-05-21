@@ -21,6 +21,8 @@ const (
 	allowedNotAllowedLimit  = 10000
 	allowedNotAllowedMinLen = 3
 	allowedNotAllowedMaxLen = 50
+	feedbackMessageMaxLen   = 2000
+	feedbackFieldMaxLen     = 200
 )
 
 type responseData struct {
@@ -31,6 +33,14 @@ type responseData struct {
 type requestData struct {
 	InputText string `json:"inputText"`
 	Allowed   bool   `json:"allowed"`
+}
+
+type feedbackRequest struct {
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Subject string `json:"subject"`
+	Message string `json:"message"`
+	Source  string `json:"source"`
 }
 
 type apiFood struct {
@@ -47,7 +57,16 @@ type foodStore struct {
 	allowedSuggestions    map[string]bool
 	notAllowedSuggestions map[string]bool
 	dataFolder            string
+	feedbackSink          feedbackSink
 	nameFoods             map[string]*apiFood
+}
+
+type feedbackSink interface {
+	submitFeedback(feedbackRequest) error
+}
+
+type fileFeedbackSink struct {
+	dataFolder string
 }
 
 var store = newFoodStore("")
@@ -60,6 +79,7 @@ func newFoodStore(dataFolder string) *foodStore {
 		allowedSuggestions:    make(map[string]bool),
 		notAllowedSuggestions: make(map[string]bool),
 		dataFolder:            dataFolder,
+		feedbackSink:          fileFeedbackSink{dataFolder: dataFolder},
 		nameFoods:             make(map[string]*apiFood),
 	}
 }
@@ -78,6 +98,7 @@ func main() {
 	http.HandleFunc("/", healthHandler)
 	http.HandleFunc("/search", searchHandler)
 	http.HandleFunc("/suggest", suggestHandler)
+	http.HandleFunc("/feedback", feedbackHandler)
 	http.HandleFunc("/categories", categoriesHandler)
 	http.HandleFunc("/subcategory", subCategoryHandler)
 
@@ -103,6 +124,36 @@ func setCORS(w http.ResponseWriter, r *http.Request) bool {
 		return true
 	}
 	return false
+}
+
+// feedbackHandler validates app feedback and stores it for later Slack plumbing.
+func feedbackHandler(w http.ResponseWriter, r *http.Request) {
+	if setCORS(w, r) {
+		return
+	}
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var request feedbackRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Error decoding JSON", http.StatusBadRequest)
+		return
+	}
+
+	normalized, err := normalizeFeedback(request)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := store.feedbackSink.submitFeedback(normalized); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 }
 
 // searchHandler returns matching allowed and not allowed foods for a query.
@@ -272,6 +323,38 @@ func (s *foodStore) subCategory(category string, subCategory string) responseDat
 	return response
 }
 
+// normalizeFeedback applies minimal privacy-conscious validation and cleanup.
+func normalizeFeedback(request feedbackRequest) (feedbackRequest, error) {
+	request.Name = stripNonASCII(strings.TrimSpace(request.Name))
+	request.Email = stripNonASCII(strings.TrimSpace(request.Email))
+	request.Subject = stripNonASCII(strings.TrimSpace(request.Subject))
+	request.Message = stripNonASCII(strings.TrimSpace(request.Message))
+	request.Source = stripNonASCII(strings.TrimSpace(request.Source))
+
+	if request.Message == "" {
+		return request, errors.New("Message is required")
+	}
+	if request.Name == "" && request.Email == "" {
+		return request, errors.New("Name or email is required")
+	}
+	if len(request.Name) > feedbackFieldMaxLen ||
+		len(request.Email) > feedbackFieldMaxLen ||
+		len(request.Subject) > feedbackFieldMaxLen ||
+		len(request.Source) > feedbackFieldMaxLen {
+		return request, errors.New("Feedback field too long")
+	}
+	if len(request.Message) > feedbackMessageMaxLen {
+		return request, errors.New("Feedback message too long")
+	}
+	if request.Subject == "" {
+		request.Subject = "App feedback"
+	}
+	if request.Source == "" {
+		request.Source = "mobile"
+	}
+	return request, nil
+}
+
 // sortedUnique removes duplicates and makes endpoint responses stable.
 func sortedUnique(list []string) []string {
 	unique := make(map[string]bool)
@@ -362,6 +445,25 @@ func (s *foodStore) processDirectory(directoryPath string) error {
 	sort.Strings(s.allowedCategories)
 	sort.Strings(s.notAllowedCategories)
 	return err
+}
+
+// submitFeedback writes one JSON line until a Slack sink is added later.
+func (s fileFeedbackSink) submitFeedback(request feedbackRequest) error {
+	filePath := path.Join(s.dataFolder, "feedback.jsonl")
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	payload, err := json.Marshal(request)
+	if err != nil {
+		return err
+	}
+	if _, err = file.Write(append(payload, '\n')); err != nil {
+		return err
+	}
+	return nil
 }
 
 // appendSuggestion persists a new user suggestion if it is not already known.
