@@ -26,9 +26,9 @@ flutter run --dart-define=AIP_BACKEND_URL=http://10.0.2.2:8080
 
 Do not commit private backend URLs, production AdMob IDs, signing keys, tokens, or certificates.
 
-The app includes a Diagnostics tab that shows the active backend URL and can test the `/` health endpoint. Use it when switching between emulator URLs and physical-phone LAN URLs.
+The app includes an About tab with links to Feedback and Diagnostics. Diagnostics shows the active backend URL and can test the `/` health endpoint. Use it when switching between emulator URLs and physical-phone LAN URLs.
 
-Diagnostics also links to a Feedback screen. Feedback posts to the Go backend `/feedback` endpoint; Slack delivery is intentionally deferred until webhook configuration is added server-side.
+Feedback posts to the Go backend `/feedback` endpoint; Slack delivery is intentionally deferred until webhook configuration is added server-side.
 
 ## App Identity Assets
 

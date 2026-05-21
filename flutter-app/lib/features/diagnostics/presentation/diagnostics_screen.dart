@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../ads/ad_banner.dart';
-import '../../../features/feedback/presentation/feedback_screen.dart';
 import '../../../widgets/status_card.dart';
 import 'diagnostics_controller.dart';
 
@@ -68,18 +67,6 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                   label: Text(
                     state.isChecking ? 'Testing...' : 'Test connection',
                   ),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const FeedbackScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.feedback_outlined),
-                  label: const Text('Send feedback'),
                 ),
                 if (state.healthMessage != null) ...[
                   const SizedBox(height: 12),
