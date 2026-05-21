@@ -26,24 +26,24 @@ go run .
 
 ## Lab deployment target
 
-The planned lab API endpoint is:
+The planned client-facing API endpoint is:
 
 ```text
-https://api.hashimojoe.com
+https://hashimojoe.com/api
 ```
 
 Recommended request path:
 
 ```text
 Flutter Android app or future hashimojoe.com site
-  -> Cloudflare Worker at api.hashimojoe.com
+  -> Cloudflare Pages Function at hashimojoe.com/api/*
   -> Cloudflare Tunnel origin hostname
   -> host Caddy
   -> 127.0.0.1:8084
   -> Docker container running the Go API
 ```
 
-The Flutter app must not contain the internal gateway secret. The Worker injects `X-Internal-Api-Key`, and the Go API
-requires it for protected routes in production.
+The Flutter app must not contain the internal gateway secret. The Pages Function injects `X-Internal-Api-Key`, and the
+Go API requires it for protected routes in production.
 
 Deployment/config docs live in `docs/`, with YAML config in `scripts/aip/config.example.yaml`.

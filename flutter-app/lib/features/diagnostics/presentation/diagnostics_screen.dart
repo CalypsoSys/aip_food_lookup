@@ -81,7 +81,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                   StatusCard(
                     title: state.errorMessage!,
                     subtitle:
-                        'Start the Go backend and confirm your phone can reach the configured host on port 8080.',
+                        'Confirm your phone can reach the configured backend URL.',
                     icon: Icons.wifi_off_outlined,
                     actionLabel: 'Retry',
                     onAction: _controller.testConnection,

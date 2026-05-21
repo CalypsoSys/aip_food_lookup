@@ -43,10 +43,10 @@ flutter run --dart-define=AIP_BACKEND_URL=http://10.0.2.2:8080 --dart-define=AIP
 For production builds, point the app at:
 
 ```text
-https://api.hashimojoe.com
+https://hashimojoe.com/api
 ```
 
-Do not pass or compile `AIP_GATEWAY_SECRET` into Flutter. The public gateway owns that internal key.
+Do not pass or compile `AIP_GATEWAY_SECRET` into Flutter. The Cloudflare Pages Function owns that internal key.
 
 ## Web frontend
 

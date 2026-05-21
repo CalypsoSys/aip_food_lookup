@@ -149,7 +149,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   StatusCard(
                     title: state.errorMessage!,
                     subtitle:
-                        'Check that the Go backend is running and your phone can reach this PC on port 8080.',
+                        'Check that your phone can reach the configured backend URL.',
                     icon: Icons.wifi_off_outlined,
                   ),
                 ],
@@ -197,7 +197,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final message = ok
         ? 'We will review "$query" promptly and add it to our catalog when appropriate.'
-        : 'Enter at least 3 characters and make sure the backend is reachable.';
+        : 'Enter at least 3 characters and make sure the backend URL is reachable.';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );

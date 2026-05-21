@@ -54,11 +54,7 @@ class ApiClient {
   }
 
   Uri _buildUri(String path, [Map<String, String>? query]) {
-    final normalizedPath = path.startsWith('/') ? path : '/$path';
-    return _baseUri.replace(
-      path: normalizedPath,
-      queryParameters: query,
-    );
+    return buildApiUri(_baseUri, path, query);
   }
 
   void _applyDefaultHeaders(HttpClientRequest request) {
@@ -81,4 +77,19 @@ class ApiClient {
     }
     throw ApiException('Expected a JSON object response.');
   }
+}
+
+Uri buildApiUri(Uri baseUri, String path, [Map<String, String>? query]) {
+  final basePath = baseUri.path.endsWith('/')
+      ? baseUri.path.substring(0, baseUri.path.length - 1)
+      : baseUri.path;
+  final relativePath = path.startsWith('/') ? path.substring(1) : path;
+  final combinedPath = relativePath.isEmpty
+      ? (basePath.isEmpty ? '/' : '$basePath/')
+      : '${basePath.isEmpty ? '' : basePath}/$relativePath';
+
+  return baseUri.replace(
+    path: combinedPath,
+    queryParameters: query,
+  );
 }

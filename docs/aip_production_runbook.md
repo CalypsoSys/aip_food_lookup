@@ -5,7 +5,7 @@ This runbook covers deploying and validating the lab-hosted Go API.
 Related docs:
 
 - `docs/aip_api_lab_plan.md`
-- `docs/aip_cloudflare_worker_gateway.md`
+- `docs/aip_cloudflare_pages_gateway.md`
 - `docs/aip_caddy_host_setup.md`
 - `docs/aip_local_development.md`
 
@@ -59,7 +59,7 @@ Required secret inputs:
 
 | Name | Purpose |
 | --- | --- |
-| `AIP_GATEWAY_SECRET` | Internal key injected by Cloudflare Pages Functions or another public gateway |
+| `AIP_GATEWAY_SECRET` | Internal key injected by Cloudflare Pages Functions |
 | `AIP_SLACK_FEEDBACK_WEBHOOK_URL` | Slack webhook for feedback |
 
 For the web frontend, configure these Cloudflare Pages environment bindings:

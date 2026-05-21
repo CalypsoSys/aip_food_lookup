@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('publicHeaders includes mobile diagnostic headers', () {
     const config = AppConfig(
-      backendBaseUrl: 'https://api.hashimojoe.com',
+      backendBaseUrl: 'https://hashimojoe.com/api',
       clientName: 'android',
       appVersion: 'dev',
     );
@@ -17,7 +17,7 @@ void main() {
 
   test('publicHeaders omits blank values', () {
     const config = AppConfig(
-      backendBaseUrl: 'https://api.hashimojoe.com',
+      backendBaseUrl: 'https://hashimojoe.com/api',
       clientName: ' ',
       appVersion: '',
     );

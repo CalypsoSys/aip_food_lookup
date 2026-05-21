@@ -6,8 +6,10 @@ This document records the target production shape for AIP Food Lookup.
 
 - Serve the web app at `hashimojoe.com` with same-origin `/api/*` calls.
 - Run the Go API in Joe's lab on host port `8084`.
-- Put Cloudflare Pages Functions in front of the web API so browser code never contains the internal gateway secret.
-- Keep a separate mobile API hostname optional for Flutter if needed later.
+- Put Cloudflare Pages Functions in front of the API so browser and Flutter code never contain the internal gateway
+  secret.
+- Use `https://hashimojoe.com/api` as the production Flutter API base URL for phase 1; do not add a separate mobile API
+  hostname unless usage or client needs grow later.
 - Route the public gateway to the lab through Cloudflare Tunnel and host-installed Caddy.
 - Use Docker Compose rendered from YAML by `babalu_yaml_env`.
 - Keep file-based food data and runtime suggestion/feedback files; do not add a database.
@@ -18,7 +20,8 @@ This document records the target production shape for AIP Food Lookup.
 
 ```text
 Flutter Android app
-  -> public gateway route, if separate mobile API hostname is enabled
+  -> https://hashimojoe.com/api
+  -> Cloudflare Pages Function
   -> Cloudflare Tunnel origin hostname
   -> host Caddy
   -> http://127.0.0.1:8084
@@ -40,7 +43,7 @@ https://hashimojoe.com
 ## Gateway key rule
 
 Do not ship `AIP_GATEWAY_SECRET` in Flutter or browser code. Clients are inspectable, so the internal key belongs only
-in Cloudflare server-side configuration and on the API host.
+in Cloudflare Pages server-side configuration and on the API host.
 
 The mobile app may send public diagnostic headers such as:
 

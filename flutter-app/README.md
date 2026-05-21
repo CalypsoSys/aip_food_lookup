@@ -25,12 +25,17 @@ flutter run --dart-define=AIP_BACKEND_URL=http://10.0.2.2:8080 --dart-define=AIP
 ```
 
 Do not commit private backend URLs, production AdMob IDs, signing keys, tokens, or certificates.
-Do not put the internal API gateway secret in Flutter; `api.hashimojoe.com` is expected to run through a Cloudflare
-Worker that injects the secret server-side.
+Do not put the internal API gateway secret in Flutter; production builds should use `https://hashimojoe.com/api`,
+where the Cloudflare Pages Function injects the secret server-side.
+
+```powershell
+flutter build apk --dart-define=AIP_BACKEND_URL=https://hashimojoe.com/api --dart-define=AIP_CLIENT_NAME=android --dart-define=AIP_APP_VERSION=prod
+```
 
 The app includes an About tab with links to Feedback and Diagnostics. Diagnostics shows the active backend URL and can test the `/` health endpoint. Use it when switching between emulator URLs and physical-phone LAN URLs.
 
-Feedback posts to the Go backend `/feedback` endpoint; Slack delivery is intentionally deferred until webhook configuration is added server-side.
+Feedback posts to the Go backend `/feedback` endpoint; Slack delivery is controlled by server-side webhook
+configuration and falls back to local JSONL storage when Slack is unavailable.
 
 ## App Identity Assets
 
