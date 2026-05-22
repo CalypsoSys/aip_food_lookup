@@ -20,7 +20,7 @@ Public client surface on Cloudflare:
 
 Private lab origin behind Cloudflare Tunnel:
 
-- `aip.hashimojoe.com`
+- `api.hashimojoe.com`
 
 Recommended request path:
 
@@ -37,7 +37,7 @@ At minimum, host Caddy should include:
     auto_https off
 }
 
-http://aip.hashimojoe.com {
+http://api.hashimojoe.com {
     reverse_proxy 127.0.0.1:8084
 }
 ```
@@ -121,7 +121,7 @@ For the Cloudflare Pages project, configure these environment bindings in Cloudf
 
 | Name | Purpose |
 | --- | --- |
-| `AIP_ORIGIN_BASE_URL` | Tunnel/Caddy origin URL, for example `https://aip.hashimojoe.com` |
+| `AIP_ORIGIN_BASE_URL` | Tunnel/Caddy origin URL, for example `https://api.hashimojoe.com` |
 | `AIP_GATEWAY_SECRET` | Same internal key configured on the Go API host |
 
 ## Build the API image locally
@@ -382,8 +382,8 @@ The keyed search request should return JSON results, and the keyed suggestion re
 Check the Caddy path:
 
 ```bash
-curl -i -H "Host: aip.hashimojoe.com" http://127.0.0.1:80/
-curl -i -H "Host: aip.hashimojoe.com" -H "X-Internal-Api-Key: ${gatewaySecret}" "http://127.0.0.1:80/search?key=apple"
+curl -i -H "Host: api.hashimojoe.com" http://127.0.0.1:80/
+curl -i -H "Host: api.hashimojoe.com" -H "X-Internal-Api-Key: ${gatewaySecret}" "http://127.0.0.1:80/search?key=apple"
 ```
 
 If either request returns `500` and `/srv/logs/aip-food-lookup/api/errors.log` does not exist, check the container logs:
@@ -418,7 +418,7 @@ tunnel: <your-tunnel-id>
 credentials-file: /etc/cloudflared/<your-tunnel-id>.json
 
 ingress:
-  - hostname: aip.hashimojoe.com
+  - hostname: api.hashimojoe.com
     service: http://127.0.0.1:80
   - service: http_status:404
 ```
@@ -441,7 +441,7 @@ systemctl is-active --quiet cloudflared && echo "cloudflared running"
   - `hashimojoe.com`
   - `www.hashimojoe.com`
 - Environment bindings:
-  - `AIP_ORIGIN_BASE_URL=https://aip.hashimojoe.com`
+  - `AIP_ORIGIN_BASE_URL=https://api.hashimojoe.com`
   - `AIP_GATEWAY_SECRET=<same as AIP__API__GatewaySecret>`
   - `VITE_AIP_API_BASE_URL=/api`
 

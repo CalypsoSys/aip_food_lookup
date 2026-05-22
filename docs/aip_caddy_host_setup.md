@@ -9,7 +9,7 @@ hostname. Caddy receives the origin request and proxies it to the local Docker-p
 
 ```text
 hashimojoe.com Pages Function /api/*
-  -> aip.hashimojoe.com tunnel
+  -> api.hashimojoe.com tunnel
   -> Caddy
   -> 127.0.0.1:8084
 ```
@@ -36,7 +36,7 @@ For the tunnel pattern, Caddy can listen on plain HTTP locally:
     }
 }
 
-http://aip.hashimojoe.com {
+http://api.hashimojoe.com {
     reverse_proxy 127.0.0.1:8084
 }
 ```
@@ -53,9 +53,9 @@ sudo systemctl status caddy --no-pager
 Local checks:
 
 ```bash
-curl -i -H "Host: aip.hashimojoe.com" http://127.0.0.1:80/
-curl -i -H "Host: aip.hashimojoe.com" http://127.0.0.1:80/search?key=apple
-curl -i -H "Host: aip.hashimojoe.com" -H "X-Internal-Api-Key: $AIP_GATEWAY_SECRET" "http://127.0.0.1:80/search?key=apple"
+curl -i -H "Host: api.hashimojoe.com" http://127.0.0.1:80/
+curl -i -H "Host: api.hashimojoe.com" http://127.0.0.1:80/search?key=apple
+curl -i -H "Host: api.hashimojoe.com" -H "X-Internal-Api-Key: $AIP_GATEWAY_SECRET" "http://127.0.0.1:80/search?key=apple"
 ```
 
 The unkeyed protected-route request should return `401` in production.

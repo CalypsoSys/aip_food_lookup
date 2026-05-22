@@ -251,7 +251,7 @@ Recommended Caddyfile:
     }
 }
 
-http://aip.hashimojoe.com {
+http://api.hashimojoe.com {
     reverse_proxy 127.0.0.1:8084
 }
 ```
