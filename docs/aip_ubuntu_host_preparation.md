@@ -270,9 +270,9 @@ Install the checked-in Caddy logrotate policy after this repo is available on th
 
 ```bash
 export AIP_REPO_ROOT=/absolute/path/to/aip_food_lookup
-sudo cp "$AIP_REPO_ROOT/scripts/caddy/caddy.logrotate" /etc/logrotate.d/aip-caddy
-sudo chmod 644 /etc/logrotate.d/aip-caddy
-sudo logrotate -d /etc/logrotate.d/aip-caddy
+sudo cp "$AIP_REPO_ROOT/scripts/caddy/caddy.logrotate" /etc/logrotate.d/caddy
+sudo chmod 644 /etc/logrotate.d/caddy
+sudo logrotate -d /etc/logrotate.d/caddy
 ```
 
 See [aip_caddy_host_setup.md](aip_caddy_host_setup.md) for the dedicated Caddy setup and validation guide.

@@ -246,10 +246,10 @@ Install logrotate policies:
 
 ```bash
 sudo cp /srv/stacks/aip-food-lookup/api/scripts/aip.logrotate /etc/logrotate.d/aip-food-lookup-api
-sudo cp /srv/stacks/aip-food-lookup/api/scripts/caddy.logrotate /etc/logrotate.d/aip-caddy
-sudo chmod 644 /etc/logrotate.d/aip-food-lookup-api /etc/logrotate.d/aip-caddy
+sudo cp /srv/stacks/aip-food-lookup/api/scripts/caddy.logrotate /etc/logrotate.d/caddy
+sudo chmod 644 /etc/logrotate.d/aip-food-lookup-api /etc/logrotate.d/caddy
 sudo logrotate -d /etc/logrotate.d/aip-food-lookup-api
-sudo logrotate -d /etc/logrotate.d/aip-caddy
+sudo logrotate -d /etc/logrotate.d/caddy
 ```
 
 ## Preflight checks on the server
