@@ -33,8 +33,8 @@ func loadConfig() appConfig {
 	return appConfig{
 		ListenAddress:           envString(":8080", "AIP__API__ListenAddress", "AIP_LISTEN_ADDRESS"),
 		DataFolder:              envString("data", "AIP__API__DataFolder", "AIP_DATA_FOLDER"),
-		AccessLogPath:           envString("logs/access.log", "AIP__API__AccessLogPath", "AIP_ACCESS_LOG_PATH"),
-		ErrorLogPath:            envString("logs/errors.log", "AIP__API__ErrorLogPath", "AIP_ERROR_LOG_PATH"),
+		AccessLogPath:           envString("output/access.log", "AIP__API__AccessLogPath", "AIP_ACCESS_LOG_PATH"),
+		ErrorLogPath:            envString("output/errors.log", "AIP__API__ErrorLogPath", "AIP_ERROR_LOG_PATH"),
 		AllowedOrigins:          envList("AIP__API__AllowedOrigins", "AIP_ALLOWED_ORIGINS"),
 		RequireGatewaySecret:    envBool(false, "AIP__API__RequireGatewaySecret", "AIP_REQUIRE_GATEWAY_SECRET"),
 		GatewaySecretHeaderName: envString("X-Internal-Api-Key", "AIP__API__GatewaySecretHeaderName", "AIP_GATEWAY_SECRET_HEADER_NAME"),
