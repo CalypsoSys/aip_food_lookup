@@ -113,7 +113,7 @@ them.
 | Name | Purpose |
 | --- | --- |
 | `AIP_GATEWAY_SECRET` | Internal API key injected by Cloudflare Pages Functions |
-| `AIP_SLACK_FEEDBACK_WEBHOOK_URL` | Slack webhook for feedback |
+| `AIP_SLACK_FEEDBACK_WEBHOOK_URL` | Slack webhook for feedback and suggestions |
 
 For the Cloudflare Pages project, configure these environment bindings in Cloudflare, not in Git:
 
@@ -205,7 +205,7 @@ Notes:
 
 - food data and runtime feedback files persist in `/srv/stacks/aip-food-lookup/data`
 - access/error logs are written under `/srv/logs/aip-food-lookup/api`
-- leave `SlackFeedbackWebhookUrl` empty only when Slack feedback delivery is intentionally disabled
+- leave `SlackFeedbackWebhookUrl` empty only when Slack feedback and suggestion delivery is intentionally disabled
 
 ## Stage and copy artifacts to the server
 

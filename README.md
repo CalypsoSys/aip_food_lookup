@@ -13,8 +13,9 @@ The Go backend lives in `cmd/aip_food_lookup` and serves:
 - `GET /subcategory?cat=<Allowed|Not Allowed>&sub=<subcategory>`
 
 Food data is stored in `data/allowed` and `data/not_allowed`. Runtime suggestion and feedback files are ignored by git.
-Production feedback posts to Slack when `AIP__API__SlackFeedbackWebhookUrl` is configured and falls back to
-`data/feedback.jsonl` if Slack is unavailable.
+Production feedback and suggestions post to Slack when `AIP__API__SlackFeedbackWebhookUrl` is configured. Feedback falls
+back to `data/feedback.jsonl` if Slack is unavailable; suggestions succeed when either the local suggestion file write or
+Slack delivery succeeds.
 
 Run locally:
 

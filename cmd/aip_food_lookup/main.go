@@ -58,7 +58,9 @@ type foodStore struct {
 	allowedSuggestions    map[string]bool
 	notAllowedSuggestions map[string]bool
 	dataFolder            string
+	errorLogPath          string
 	feedbackSink          feedbackSink
+	suggestionSink        suggestionSink
 	nameFoods             map[string]*apiFood
 }
 
@@ -69,6 +71,10 @@ type feedbackSink interface {
 type fileFeedbackSink struct {
 	dataFolder string
 	filePath   string
+}
+
+type suggestionSink interface {
+	submitSuggestion(requestData) error
 }
 
 var store = newFoodStore("")
@@ -90,7 +96,9 @@ func main() {
 	config := loadConfig()
 
 	store = newFoodStore(config.DataFolder)
+	store.errorLogPath = config.ErrorLogPath
 	store.feedbackSink = newFeedbackSink(config)
+	store.suggestionSink = newSuggestionSink(config)
 	if err := store.processDirectory(config.DataFolder); err != nil {
 		fmt.Println("error loading data:", err)
 	}
@@ -182,7 +190,7 @@ func suggestHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Suggestion too short", http.StatusBadRequest)
 		return
 	}
-	if err := store.appendSuggestion(request.Allowed, request.InputText); err != nil {
+	if err := store.submitSuggestion(request.Allowed, request.InputText); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -452,6 +460,33 @@ func (s fileFeedbackSink) submitFeedback(request feedbackRequest) error {
 		return err
 	}
 	return nil
+}
+
+// submitSuggestion attempts local storage and Slack notification independently.
+func (s *foodStore) submitSuggestion(allowed bool, text string) error {
+	request := requestData{
+		InputText: text,
+		Allowed:   allowed,
+	}
+
+	localErr := s.appendSuggestion(allowed, text)
+	if localErr != nil {
+		writeErrorLog(s.errorLogPath, fmt.Sprintf("suggestion file write failed: %v", localErr))
+	}
+
+	if s.suggestionSink == nil {
+		return localErr
+	}
+
+	slackErr := s.suggestionSink.submitSuggestion(request)
+	if slackErr != nil {
+		writeErrorLog(s.errorLogPath, fmt.Sprintf("slack suggestion failed: %v", slackErr))
+	}
+
+	if localErr == nil || slackErr == nil {
+		return nil
+	}
+	return errors.Join(localErr, slackErr)
 }
 
 // appendSuggestion persists a new user suggestion if it is not already known.
