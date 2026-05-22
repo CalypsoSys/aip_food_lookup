@@ -213,15 +213,13 @@ The AIP repo lives in WSL/Linux for this workflow, while Windows PowerShell owns
 files that PowerShell must copy into a Windows-visible transfer subfolder from WSL:
 
 ```bash
-mkdir -p /mnt/c/transfer/aip-deploy/docker
-mkdir -p /mnt/c/transfer/aip-deploy/scripts/aip
-mkdir -p /mnt/c/transfer/aip-deploy/scripts/caddy
+mkdir -p /mnt/c/transfer/aip-deploy
 
-cp docker/docker-compose.yml /mnt/c/transfer/aip-deploy/docker/docker-compose.yml
-cp scripts/aip/compose-aip.sh /mnt/c/transfer/aip-deploy/scripts/aip/compose-aip.sh
-cp scripts/aip/smoke-local-docker.sh /mnt/c/transfer/aip-deploy/scripts/aip/smoke-local-docker.sh
-cp scripts/aip/aip.logrotate /mnt/c/transfer/aip-deploy/scripts/aip/aip.logrotate
-cp scripts/caddy/caddy.logrotate /mnt/c/transfer/aip-deploy/scripts/caddy/caddy.logrotate
+cp docker/docker-compose.yml /mnt/c/transfer/aip-deploy/docker-compose.yml
+cp scripts/aip/compose-aip.sh /mnt/c/transfer/aip-deploy/compose-aip.sh
+cp scripts/aip/smoke-local-docker.sh /mnt/c/transfer/aip-deploy/smoke-local-docker.sh
+cp scripts/aip/aip.logrotate /mnt/c/transfer/aip-deploy/aip.logrotate
+cp scripts/caddy/caddy.logrotate /mnt/c/transfer/aip-deploy/caddy.logrotate
 ```
 
 Then copy from Windows PowerShell:
@@ -233,11 +231,11 @@ $transfer = "C:\transfer\aip-deploy"
 ssh ${server} "cd /srv/stacks/aip-food-lookup/api && if [ -f aip-food-lookup-api-latest.tar.gz ]; then mv aip-food-lookup-api-latest.tar.gz aip-food-lookup-api-latest.lastgood.tar.gz; fi"
 scp C:\transfer\aip-food-lookup-api-latest.tar.gz ${server}:/srv/stacks/aip-food-lookup/api/
 scp C:\transfer\render-config-env ${server}:/srv/stacks/aip-food-lookup/api/scripts/render-config-env
-scp "$transfer\docker\docker-compose.yml" ${server}:/srv/stacks/aip-food-lookup/api/docker-compose.yml
-scp "$transfer\scripts\aip\compose-aip.sh" ${server}:/srv/stacks/aip-food-lookup/api/scripts/compose-aip.sh
-scp "$transfer\scripts\aip\smoke-local-docker.sh" ${server}:/srv/stacks/aip-food-lookup/api/scripts/smoke-local-docker.sh
-scp "$transfer\scripts\aip\aip.logrotate" ${server}:/srv/stacks/aip-food-lookup/api/scripts/aip.logrotate
-scp "$transfer\scripts\caddy\caddy.logrotate" ${server}:/srv/stacks/aip-food-lookup/api/scripts/caddy.logrotate
+scp "$transfer\docker-compose.yml" ${server}:/srv/stacks/aip-food-lookup/api/docker-compose.yml
+scp "$transfer\compose-aip.sh" ${server}:/srv/stacks/aip-food-lookup/api/scripts/compose-aip.sh
+scp "$transfer\smoke-local-docker.sh" ${server}:/srv/stacks/aip-food-lookup/api/scripts/smoke-local-docker.sh
+scp "$transfer\aip.logrotate" ${server}:/srv/stacks/aip-food-lookup/api/scripts/aip.logrotate
+scp "$transfer\caddy.logrotate" ${server}:/srv/stacks/aip-food-lookup/api/scripts/caddy.logrotate
 ```
 
 After copying artifacts and editing `config.yaml`, on the Ubuntu host:
