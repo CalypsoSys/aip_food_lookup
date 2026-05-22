@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Flutter: Galaxy S23",
+      "name": "Dev: Flutter: Galaxy S23",
       "type": "dart",
       "request": "launch",
       "program": "${workspaceFolder}/flutter-app/lib/main.dart",
@@ -19,6 +19,27 @@
       }
     },
     {
+      "name": "Prod: Flutter: Galaxy S23",
+      "type": "dart",
+      "request": "launch",
+      "program": "${workspaceFolder}/flutter-app/lib/main.dart",
+      "cwd": "${workspaceFolder}/flutter-app",
+      "deviceId": "RFCWC06KQGF",
+      "toolArgs": [
+        "--dart-define",
+        "AIP_BACKEND_URL=https://hashimojoe.com/api",
+        "--dart-define",
+        "AIP_CLIENT_NAME=android",
+        "--dart-define",
+        "AIP_APP_VERSION=prod"
+      ],
+      "preLaunchTask": "flutter: pub get",
+      "presentation": {
+        "group": "local",
+        "order": 2
+      }
+    },
+    {
       "name": "_web_frontend_internal",
       "type": "pwa-chrome",
       "request": "launch",
@@ -27,7 +48,7 @@
       "preLaunchTask": "local: prepare web launch",
       "presentation": {
         "group": "local",
-        "order": 2,
+        "order": 3,
         "hidden": true
       }
     }
