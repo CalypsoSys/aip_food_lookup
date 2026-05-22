@@ -62,6 +62,12 @@ expect_status 401 "$BASE_URL/search?key=apple"
 echo "Checking protected search accepts gateway key"
 expect_status 200 "$BASE_URL/search?key=apple" -H "X-Internal-Api-Key: $SECRET"
 
+echo "Checking suggestion endpoint accepts gateway key"
+expect_status 200 "$BASE_URL/suggest" \
+    -H "X-Internal-Api-Key: $SECRET" \
+    -H "Content-Type: application/json" \
+    --data '{"inputText":"smoke-test-food-unique","allowed":true}'
+
 echo "Checking feedback endpoint accepts gateway key"
 expect_status 200 "$BASE_URL/feedback" \
     -H "X-Internal-Api-Key: $SECRET" \

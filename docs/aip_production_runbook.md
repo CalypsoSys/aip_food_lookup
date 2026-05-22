@@ -338,6 +338,14 @@ find data/allowed data/not_allowed -type f | sort
 That refreshes the tracked catalog files and leaves server-created runtime files in `/srv/stacks/aip-food-lookup/data`
 alone.
 
+The API loads the catalog into memory at startup. If the stack is already running when seed data changes, restart the
+API container after this step:
+
+```bash
+cd /srv/stacks/aip-food-lookup/api
+./scripts/compose-aip.sh restart
+```
+
 If you intentionally need to remove catalog files that no longer exist in Git, back up the data directory first, then
 replace only the tracked catalog directories:
 
@@ -365,10 +373,11 @@ gatewaySecret="replace_with_real_gateway_secret"
 curl -i http://127.0.0.1:8084/
 curl -i "http://127.0.0.1:8084/search?key=apple"
 curl -i -H "X-Internal-Api-Key: ${gatewaySecret}" "http://127.0.0.1:8084/search?key=apple"
+curl -i -H "X-Internal-Api-Key: ${gatewaySecret}" -H "Content-Type: application/json" "http://127.0.0.1:8084/suggest" --data '{"inputText":"smoke-test-food-unique","allowed":true}'
 ```
 
 If gateway-secret enforcement is enabled, direct protected requests without `X-Internal-Api-Key` should return `401`.
-The keyed request should return JSON results.
+The keyed search request should return JSON results, and the keyed suggestion request should return `200`.
 
 Check the Caddy path:
 
@@ -397,6 +406,7 @@ The smoke test starts Docker Compose and verifies:
 - `GET /` returns `200`
 - unkeyed `GET /search?key=apple` returns `401`
 - keyed `GET /search?key=apple` returns `200`
+- keyed `POST /suggest` returns `200`
 - keyed `POST /feedback` returns `200`
 
 ## Cloudflare Tunnel
