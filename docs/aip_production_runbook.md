@@ -51,6 +51,7 @@ Expected structure:
   docker-compose.yml
   config.yaml
   aip-food-lookup-api-latest.tar.gz
+  aip-food-data-latest.tar.gz
   scripts/
     compose-aip.sh
     smoke-local-docker.sh
@@ -97,6 +98,7 @@ Copy or derive these from the repo:
 - `scripts/aip/config.example.yaml`
 - `scripts/aip/aip.logrotate`
 - `scripts/caddy/caddy.logrotate`
+- `data/allowed/` and `data/not_allowed/`, archived as the seed food data tarball
 - the built API image tarball you create locally
 
 Server-local files that must not come from git:
@@ -153,6 +155,25 @@ That gives you:
 
 ```text
 C:\transfer\render-config-env
+```
+
+## Stage seed food data locally
+
+The tracked food catalog lives in `data/allowed` and `data/not_allowed`. Runtime files such as `feedback.jsonl`,
+`suggested_allowed.txt`, and `suggested_not_allowed.txt` are created on the server and must not be copied from Git.
+
+From the repo root in WSL/Linux:
+
+```bash
+mkdir -p /mnt/c/transfer/aip-deploy
+if [ -f /mnt/c/transfer/aip-deploy/aip-food-data-latest.tar.gz ]; then mv /mnt/c/transfer/aip-deploy/aip-food-data-latest.tar.gz /mnt/c/transfer/aip-deploy/aip-food-data-latest.lastgood.tar.gz; fi
+tar -C data -czf /mnt/c/transfer/aip-deploy/aip-food-data-latest.tar.gz allowed not_allowed
+```
+
+That leaves:
+
+```text
+C:\transfer\aip-deploy\aip-food-data-latest.tar.gz
 ```
 
 ## Create the server config.yaml
@@ -229,6 +250,7 @@ $server = "replace_with_user@replace_with_server"
 $transfer = "C:\transfer\aip-deploy"
 
 scp C:\transfer\aip-food-lookup-api-latest.tar.gz ${server}:/srv/stacks/aip-food-lookup/api/
+scp "$transfer\aip-food-data-latest.tar.gz" ${server}:/srv/stacks/aip-food-lookup/api/
 scp C:\transfer\render-config-env ${server}:/srv/stacks/aip-food-lookup/api/scripts/render-config-env
 scp "$transfer\docker-compose.yml" ${server}:/srv/stacks/aip-food-lookup/api/docker-compose.yml
 scp "$transfer\compose-aip.sh" ${server}:/srv/stacks/aip-food-lookup/api/scripts/compose-aip.sh
@@ -266,6 +288,7 @@ docker version
 docker compose version
 test -f config.yaml && echo "config.yaml present"
 test -f docker-compose.yml && echo "compose file present"
+test -f aip-food-data-latest.tar.gz && echo "seed food data archive present"
 test -x scripts/compose-aip.sh && echo "compose wrapper present"
 test -x scripts/smoke-local-docker.sh && echo "smoke test present"
 test -x scripts/render-config-env && echo "render binary present"
@@ -300,6 +323,28 @@ On the Ubuntu host:
 ```bash
 cd /srv/stacks/aip-food-lookup/api
 gzip -dc aip-food-lookup-api-latest.tar.gz | docker load
+```
+
+## Deploy seed food data
+
+On the Ubuntu host:
+
+```bash
+cd /srv/stacks/aip-food-lookup
+tar -xzf api/aip-food-data-latest.tar.gz -C data
+find data/allowed data/not_allowed -type f | sort
+```
+
+That refreshes the tracked catalog files and leaves server-created runtime files in `/srv/stacks/aip-food-lookup/data`
+alone.
+
+If you intentionally need to remove catalog files that no longer exist in Git, back up the data directory first, then
+replace only the tracked catalog directories:
+
+```bash
+sudo tar -czf /srv/backups/aip-food-lookup/aip-data-before-catalog-refresh-$(date +%Y%m%d%H%M%S).tar.gz -C /srv/stacks/aip-food-lookup data
+rm -rf /srv/stacks/aip-food-lookup/data/allowed /srv/stacks/aip-food-lookup/data/not_allowed
+tar -xzf /srv/stacks/aip-food-lookup/api/aip-food-data-latest.tar.gz -C /srv/stacks/aip-food-lookup/data
 ```
 
 ## Bring up the stack
