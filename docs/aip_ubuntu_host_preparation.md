@@ -277,29 +277,7 @@ sudo logrotate -d /etc/logrotate.d/caddy
 
 See [aip_caddy_host_setup.md](aip_caddy_host_setup.md) for the dedicated Caddy setup and validation guide.
 
-## 11. Prepare AIP stack directories
-
-Run on the Ubuntu host:
-
-```bash
-sudo mkdir -p /srv/stacks/aip-food-lookup/api/scripts
-sudo mkdir -p /srv/stacks/aip-food-lookup/data
-sudo mkdir -p /srv/backups/aip-food-lookup
-sudo mkdir -p /srv/logs/aip-food-lookup/api
-
-sudo chown -R $USER:$USER /srv/stacks/aip-food-lookup
-sudo chown -R $USER:$USER /srv/backups/aip-food-lookup
-sudo chown -R $USER:$USER /srv/logs/aip-food-lookup
-```
-
-The API container mounts:
-
-```text
-/srv/stacks/aip-food-lookup/data -> /app/data
-/srv/logs/aip-food-lookup/api   -> /app/logs
-```
-
-## 12. Verify prepared host state
+## 11. Verify prepared host state
 
 Run on the Ubuntu host:
 
@@ -313,12 +291,9 @@ systemctl is-active --quiet cloudflared && echo "cloudflared running"
 sudo ufw status verbose
 cloudflared --version
 sudo caddy validate --config /etc/caddy/Caddyfile
-test -d /srv/stacks/aip-food-lookup/api && echo "AIP stack directory present"
-test -d /srv/stacks/aip-food-lookup/data && echo "AIP data directory present"
-test -d /srv/logs/aip-food-lookup/api && echo "AIP log directory present"
 ```
 
-## 13. Continue with the production runbook
+## 12. Continue with the production runbook
 
 The remaining AIP-specific deployment steps belong in:
 

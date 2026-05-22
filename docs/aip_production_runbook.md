@@ -79,6 +79,13 @@ sudo chown -R $USER:$USER /srv/logs/aip-food-lookup
 sudo chown -R caddy:caddy /srv/logs/caddy
 ```
 
+The API container mounts:
+
+```text
+/srv/stacks/aip-food-lookup/data -> /app/data
+/srv/logs/aip-food-lookup/api   -> /app/logs
+```
+
 ## Files from this repo
 
 Copy or derive these from the repo:
