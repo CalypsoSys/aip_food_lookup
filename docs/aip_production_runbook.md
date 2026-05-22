@@ -228,7 +228,6 @@ Then copy from Windows PowerShell:
 $server = "replace_with_user@replace_with_server"
 $transfer = "C:\transfer\aip-deploy"
 
-ssh ${server} "cd /srv/stacks/aip-food-lookup/api && if [ -f aip-food-lookup-api-latest.tar.gz ]; then mv aip-food-lookup-api-latest.tar.gz aip-food-lookup-api-latest.lastgood.tar.gz; fi"
 scp C:\transfer\aip-food-lookup-api-latest.tar.gz ${server}:/srv/stacks/aip-food-lookup/api/
 scp C:\transfer\render-config-env ${server}:/srv/stacks/aip-food-lookup/api/scripts/render-config-env
 scp "$transfer\docker-compose.yml" ${server}:/srv/stacks/aip-food-lookup/api/docker-compose.yml
