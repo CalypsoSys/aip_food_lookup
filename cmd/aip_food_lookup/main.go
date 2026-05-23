@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"os"
 	"path"
@@ -242,7 +241,6 @@ func commonResponse(w http.ResponseWriter, response responseData) {
 func (s *foodStore) match(name string, typeSearch string) responseData {
 	name = strings.ToLower(strings.TrimSpace(name))
 	sdm := godoublemetaphone.NewShortDoubleMetaphone(name)
-	primary := sdm.PrimaryShortKey()
 
 	possibleAllowed := []string{}
 	possibleNotAllowed := []string{}
@@ -266,7 +264,7 @@ func (s *foodStore) match(name string, typeSearch string) responseData {
 			}
 		}
 
-		if soundSearch && math.Abs(float64(int64(primary)-int64(food.primaryShortMetaphone))) < 10 {
+		if soundSearch && fuzzySoundMatch(name, sdm, food) {
 			if food.allowed {
 				soundPossibleAllowed = append(soundPossibleAllowed, food.name)
 			} else {
@@ -282,6 +280,146 @@ func (s *foodStore) match(name string, typeSearch string) responseData {
 		Allowed:    sortedUnique(possibleAllowed),
 		NotAllowed: sortedUnique(possibleNotAllowed),
 	}
+}
+
+func fuzzySoundMatch(query string, queryMetaphone godoublemetaphone.ShortDoubleMetaphone, food *apiFood) bool {
+	if spellingDistanceAllowed(query, food.name) {
+		return true
+	}
+	for _, token := range searchableTokens(food.name) {
+		if spellingDistanceAllowed(query, token) {
+			return true
+		}
+	}
+	if !metaphoneKeysMatch(queryMetaphone, food) {
+		return false
+	}
+
+	query = strings.ToLower(strings.TrimSpace(query))
+	candidate := strings.ToLower(strings.TrimSpace(food.name))
+	limit := spellingDistanceLimit(query)
+	if len(query) > 4 {
+		limit++
+	}
+	if levenshteinDistance(query, candidate) <= limit {
+		return true
+	}
+	for _, token := range searchableTokens(candidate) {
+		if levenshteinDistance(query, token) <= limit {
+			return true
+		}
+	}
+	return false
+}
+
+func metaphoneKeysMatch(query godoublemetaphone.ShortDoubleMetaphone, food *apiFood) bool {
+	queryKeys := validMetaphoneKeys(query.PrimaryShortKey(), query.AlternateShortKey())
+	foodKeys := validMetaphoneKeys(food.primaryShortMetaphone, food.alternateShortMetaphone)
+	for queryKey := range queryKeys {
+		if foodKeys[queryKey] {
+			return true
+		}
+	}
+	return false
+}
+
+func validMetaphoneKeys(keys ...uint16) map[uint16]bool {
+	valid := make(map[uint16]bool, len(keys))
+	for _, key := range keys {
+		if key == godoublemetaphone.METAPHONE_INVALID_KEY {
+			continue
+		}
+		valid[key] = true
+	}
+	return valid
+}
+
+func spellingDistanceAllowed(query string, candidate string) bool {
+	query = strings.ToLower(strings.TrimSpace(query))
+	candidate = strings.ToLower(strings.TrimSpace(candidate))
+	if query == "" || candidate == "" {
+		return false
+	}
+	if query == candidate {
+		return true
+	}
+	if query[0] != candidate[0] {
+		return false
+	}
+
+	distance := levenshteinDistance(query, candidate)
+	return distance <= spellingDistanceLimit(query)
+}
+
+func searchableTokens(candidate string) []string {
+	candidate = strings.ToLower(candidate)
+	fields := strings.FieldsFunc(candidate, func(r rune) bool {
+		return r < 'a' || r > 'z'
+	})
+	tokens := []string{}
+	for _, field := range fields {
+		field = strings.TrimSpace(field)
+		if len(field) >= 3 {
+			tokens = append(tokens, field)
+		}
+	}
+	return tokens
+}
+
+func spellingDistanceLimit(query string) int {
+	switch length := len(query); {
+	case length <= 4:
+		return 1
+	case length <= 7:
+		return 3
+	default:
+		return 3
+	}
+}
+
+func levenshteinDistance(a string, b string) int {
+	if a == b {
+		return 0
+	}
+	if len(a) == 0 {
+		return len(b)
+	}
+	if len(b) == 0 {
+		return len(a)
+	}
+
+	previous := make([]int, len(b)+1)
+	current := make([]int, len(b)+1)
+	for j := range previous {
+		previous[j] = j
+	}
+
+	for i := 1; i <= len(a); i++ {
+		current[0] = i
+		for j := 1; j <= len(b); j++ {
+			cost := 0
+			if a[i-1] != b[j-1] {
+				cost = 1
+			}
+			current[j] = minInt(
+				previous[j]+1,
+				current[j-1]+1,
+				previous[j-1]+cost,
+			)
+		}
+		previous, current = current, previous
+	}
+	return previous[len(b)]
+}
+
+func minInt(values ...int) int {
+	minimum := values[0]
+	for _, value := range values[1:] {
+		if value < minimum {
+			minimum = value
+		}
+	}
+	return minimum
 }
 
 // subCategory filters loaded foods by MAUI-compatible category route values.
