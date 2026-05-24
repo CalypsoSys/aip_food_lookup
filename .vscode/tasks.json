@@ -2,6 +2,27 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "backend: stop port 8080",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "$lines = netstat -ano -p tcp | Select-String '^\\s*TCP\\s+\\S+:8080\\s+\\S+\\s+LISTENING\\s+(\\d+)\\s*$'; $pids = @($lines | ForEach-Object { [int]$_.Matches[0].Groups[1].Value } | Sort-Object -Unique); if ($pids.Count -eq 0) { Write-Host 'No listener on port 8080.'; exit 0 }; foreach ($pidValue in $pids) { Write-Host \"Stopping process $pidValue listening on port 8080\"; Stop-Process -Id $pidValue -Force -ErrorAction Stop }; Start-Sleep -Milliseconds 500"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "group": "local",
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "backend: go run",
       "type": "shell",
       "command": "$env:AIP_DATA_FOLDER='${workspaceFolder}\\data'; try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/ | Out-Null; Write-Host 'Backend ready on http://127.0.0.1:8080'; Write-Host 'Using existing backend process. Stop that process if you need a fresh backend.'; while ($true) { Start-Sleep -Seconds 3600 } } catch { Write-Host 'Backend starting on http://127.0.0.1:8080'; Write-Host \"AIP_DATA_FOLDER=$env:AIP_DATA_FOLDER\"; go run . }",
@@ -140,8 +161,18 @@
       "problemMatcher": []
     },
     {
+      "label": "local: restart backend",
+      "dependsOn": [
+        "backend: stop port 8080",
+        "backend: go run",
+        "backend: wait for ready"
+      ],
+      "dependsOrder": "sequence"
+    },
+    {
       "label": "local: prepare phone launch",
       "dependsOn": [
+        "backend: stop port 8080",
         "backend: go run",
         "backend: wait for ready",
         "flutter: pub get"
@@ -151,6 +182,7 @@
     {
       "label": "local: prepare web launch",
       "dependsOn": [
+        "backend: stop port 8080",
         "backend: go run",
         "backend: wait for ready",
         "frontend: pnpm install",
