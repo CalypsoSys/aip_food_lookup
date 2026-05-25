@@ -17,7 +17,12 @@ fi
 STACK_DIR="${STACK_DIR:-$DEFAULT_STACK_DIR}"
 COMPOSE_FILE="${COMPOSE_FILE:-$STACK_DIR/docker-compose.yml}"
 CONFIG_FILE="${CONFIG_FILE:-$DEFAULT_CONFIG_FILE}"
-RENDER_BIN="$SCRIPT_DIR/render-config-env"
+DEFAULT_RENDER_BIN="/srv/utilities/bin/render-config-env"
+RENDER_BIN="${RENDER_BIN:-$DEFAULT_RENDER_BIN}"
+
+if [ "$RENDER_BIN" = "$DEFAULT_RENDER_BIN" ] && [ ! -x "$RENDER_BIN" ] && [ -x "$SCRIPT_DIR/render-config-env" ]; then
+    RENDER_BIN="$SCRIPT_DIR/render-config-env"
+fi
 
 if [ ! -f "$COMPOSE_FILE" ]; then
     echo "Compose file not found: $COMPOSE_FILE" >&2
@@ -31,7 +36,8 @@ fi
 
 if [ ! -x "$RENDER_BIN" ]; then
     echo "Render binary is not executable: $RENDER_BIN" >&2
-    echo "Build and deploy render-config-env from ~/work/calypsosys-workbench/repos/babalu-yaml-env." >&2
+    echo "Build render-config-env in dev/WSL, then copy it to $DEFAULT_RENDER_BIN on prod." >&2
+    echo "Set RENDER_BIN to override the renderer path for local testing." >&2
     exit 1
 fi
 

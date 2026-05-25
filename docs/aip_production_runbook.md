@@ -55,7 +55,6 @@ Expected structure:
   scripts/
     compose-aip.sh
     smoke-local-docker.sh
-    render-config-env
     aip.logrotate
     caddy.logrotate
 
@@ -63,6 +62,7 @@ Expected structure:
 /srv/backups/aip-food-lookup
 /srv/logs/aip-food-lookup/api
 /srv/logs/caddy
+/srv/utilities/bin/render-config-env
 ```
 
 Create the required directories if they do not already exist:
@@ -142,7 +142,8 @@ C:\transfer\aip-food-lookup-api-latest.tar.gz
 
 ## Build the shared YAML-to-env renderer
 
-Build the shared renderer from its repo in WSL/Linux so the server receives a Linux binary:
+Build the shared renderer from its repo in dev/WSL so the server receives a Linux binary. Do not build this on the
+production host:
 
 ```bash
 cd ~/work/calypsosys-workbench/repos/babalu-yaml-env
@@ -245,13 +246,21 @@ cp scripts/caddy/caddy.logrotate /mnt/c/transfer/aip-deploy/caddy.logrotate
 
 Then copy from Windows PowerShell:
 
+Prepare the shared utility directory manually on the Ubuntu host before the first copy:
+
+```bash
+sudo mkdir -p /srv/utilities/bin
+sudo chown "$USER:$USER" /srv/utilities/bin
+chmod 755 /srv/utilities /srv/utilities/bin
+```
+
 ```powershell
 $server = "replace_with_user@replace_with_server"
 $transfer = "C:\transfer\aip-deploy"
 
 scp C:\transfer\aip-food-lookup-api-latest.tar.gz ${server}:/srv/stacks/aip-food-lookup/api/
 scp "$transfer\aip-food-data-latest.tar.gz" ${server}:/srv/stacks/aip-food-lookup/api/
-scp C:\transfer\render-config-env ${server}:/srv/stacks/aip-food-lookup/api/scripts/render-config-env
+scp C:\transfer\render-config-env ${server}:/srv/utilities/bin/render-config-env
 scp "$transfer\docker-compose.yml" ${server}:/srv/stacks/aip-food-lookup/api/docker-compose.yml
 scp "$transfer\compose-aip.sh" ${server}:/srv/stacks/aip-food-lookup/api/scripts/compose-aip.sh
 scp "$transfer\smoke-local-docker.sh" ${server}:/srv/stacks/aip-food-lookup/api/scripts/smoke-local-docker.sh
@@ -264,7 +273,7 @@ After copying artifacts and editing `config.yaml`, on the Ubuntu host:
 ```bash
 chmod +x /srv/stacks/aip-food-lookup/api/scripts/compose-aip.sh
 chmod +x /srv/stacks/aip-food-lookup/api/scripts/smoke-local-docker.sh
-chmod +x /srv/stacks/aip-food-lookup/api/scripts/render-config-env
+chmod 755 /srv/utilities/bin/render-config-env
 chmod 600 /srv/stacks/aip-food-lookup/api/config.yaml
 ```
 
@@ -291,7 +300,7 @@ test -f docker-compose.yml && echo "compose file present"
 test -f aip-food-data-latest.tar.gz && echo "seed food data archive present"
 test -x scripts/compose-aip.sh && echo "compose wrapper present"
 test -x scripts/smoke-local-docker.sh && echo "smoke test present"
-test -x scripts/render-config-env && echo "render binary present"
+test -x /srv/utilities/bin/render-config-env && echo "render utility present"
 test -d /srv/stacks/aip-food-lookup/data && echo "data directory present"
 sudo caddy validate --config /etc/caddy/Caddyfile
 systemctl status caddy --no-pager

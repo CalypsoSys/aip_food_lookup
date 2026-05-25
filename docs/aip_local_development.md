@@ -88,11 +88,14 @@ then opens the web frontend in a visible browser debug session.
 
 ## Docker config render
 
-Build `render-config-env` from `repos/babalu-yaml-env`, then place it at:
+Install the shared renderer locally at:
 
 ```text
-scripts/aip/render-config-env
+/srv/utilities/bin/render-config-env
 ```
+
+The compose wrapper also supports a legacy fallback at `scripts/aip/render-config-env` during migration, or a custom
+path through `RENDER_BIN`.
 
 Copy the sample config:
 
