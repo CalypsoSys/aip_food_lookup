@@ -14,6 +14,14 @@ It runs:
 
 The frontend calls `/api/*`; Vite proxies those calls to the Go API and strips the `/api` prefix.
 
+## Restarting the local API
+
+Use the `local: restart backend` task to stop any process listening on `8080`, start the Go API, and wait for it to
+respond before continuing local work.
+
+The local web and phone launch profiles run the same stop-and-start sequence before opening the app, so they should pick
+up backend code changes without reusing an older process.
+
 ## Flutter: Galaxy S23
 
 Use `Flutter: Galaxy S23` for Android device debugging. It starts the Go API locally, runs `flutter pub get`, then
