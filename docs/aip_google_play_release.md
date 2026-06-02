@@ -54,7 +54,7 @@ Working values for the first Play Console draft:
 ## Release build checklist
 
 - Confirm production backend path is `https://hashimojoe.com/api`.
-- Remove or restrict Android cleartext traffic before release.
+- Keep Android cleartext traffic restricted to debug builds.
 - Confirm target SDK satisfies current Google Play requirements.
 - Configure Play App Signing and upload signing keys outside the repository.
 - Build a release Android App Bundle with production dart defines.
@@ -79,3 +79,18 @@ Working values for the first Play Console draft:
 4. Build and test a production-configured Android App Bundle.
 5. Upload to Play internal testing.
 6. Complete AdMob app verification and then switch to production ad unit IDs.
+
+## Android release build notes
+
+Use Play App Signing and keep the upload keystore outside git. A typical local signing setup uses an untracked
+`flutter-app/android/key.properties` file that points to an untracked keystore file.
+
+Production release builds should use HTTPS only:
+
+```powershell
+cd flutter-app
+flutter build appbundle --release --dart-define=AIP_BACKEND_URL=https://hashimojoe.com/api --dart-define=AIP_CLIENT_NAME=android --dart-define=AIP_APP_VERSION=prod
+```
+
+Local debug builds can still use `http://10.0.2.2:8080` or a LAN backend URL because debug builds carry a debug-only
+manifest override for cleartext traffic. The main manifest is release-safe.
