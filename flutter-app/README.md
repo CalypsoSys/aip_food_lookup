@@ -32,6 +32,19 @@ where the Cloudflare Pages Function injects the secret server-side.
 flutter build apk --dart-define=AIP_BACKEND_URL=https://hashimojoe.com/api --dart-define=AIP_CLIENT_NAME=android --dart-define=AIP_APP_VERSION=prod
 ```
 
+## Ads
+
+The Search screen includes a Google Mobile Ads banner. By default it uses Google's Android test app ID and test banner ad
+unit ID. Keep those defaults for local development and pre-store verification.
+
+Production ad IDs should be supplied at build time and should not be committed:
+
+```powershell
+flutter build appbundle --release --dart-define=AIP_BACKEND_URL=https://hashimojoe.com/api --dart-define=AIP_CLIENT_NAME=android --dart-define=AIP_APP_VERSION=prod --dart-define=AIP_ADMOB_BANNER_AD_UNIT_ID=<ad-unit-id> --android-project-arg=AIP_ADMOB_APP_ID=<app-id>
+```
+
+Set `--dart-define=AIP_ADS_ENABLED=false` to hide the banner in a build.
+
 The app includes an About tab with links to Feedback and Diagnostics. Diagnostics shows the active backend URL and can test the `/` health endpoint. Use it when switching between emulator URLs and physical-phone LAN URLs.
 
 Feedback posts to the Go backend `/feedback` endpoint; Slack delivery is controlled by server-side webhook

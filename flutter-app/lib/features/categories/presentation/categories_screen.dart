@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../ads/ad_banner.dart';
 import '../../../widgets/asset_header.dart';
 import 'category_details_screen.dart';
 
@@ -38,8 +37,6 @@ class CategoriesScreen extends StatelessWidget {
                   },
                 ),
               ),
-            const SizedBox(height: 16),
-            const AdBannerPlaceholder(),
           ],
         ),
       ),

@@ -67,8 +67,8 @@ Working values for the first Play Console draft:
 - Restore or create the AdMob account.
 - Create the AdMob app using package `com.calypsosystems.aipfoodlookup`.
 - Publish `app-ads.txt` at the root of the developer website domain used in store listings.
-- Add the Flutter Google Mobile Ads SDK with test ad unit IDs first.
-- Add the Android AdMob app ID as manifest metadata through non-secret build configuration.
+- Keep Google Mobile Ads on test app/ad unit IDs until Play and AdMob review are ready.
+- Supply the Android AdMob app ID through non-secret build configuration for production builds.
 - Use production ad unit IDs only after AdMob app verification and Play review are ready.
 
 ## First implementation sequence
@@ -94,3 +94,10 @@ flutter build appbundle --release --dart-define=AIP_BACKEND_URL=https://hashimoj
 
 Local debug builds can still use `http://10.0.2.2:8080` or a LAN backend URL because debug builds carry a debug-only
 manifest override for cleartext traffic. The main manifest is release-safe.
+
+The Search screen banner defaults to Google's test AdMob app ID and test banner ad unit ID. Production ad builds should
+pass production IDs without committing them:
+
+```powershell
+flutter build appbundle --release --dart-define=AIP_BACKEND_URL=https://hashimojoe.com/api --dart-define=AIP_CLIENT_NAME=android --dart-define=AIP_APP_VERSION=prod --dart-define=AIP_ADMOB_BANNER_AD_UNIT_ID=<ad-unit-id> --android-project-arg=AIP_ADMOB_APP_ID=<app-id>
+```

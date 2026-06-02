@@ -20,6 +20,16 @@ class AppConfig {
     defaultValue: 'dev',
   );
 
+  static const adsEnabled = bool.fromEnvironment(
+    'AIP_ADS_ENABLED',
+    defaultValue: true,
+  );
+
+  static const adMobBannerAdUnitId = String.fromEnvironment(
+    'AIP_ADMOB_BANNER_AD_UNIT_ID',
+    defaultValue: 'ca-app-pub-3940256099942544/6300978111',
+  );
+
   static const dev = AppConfig(backendBaseUrl: backendUrlFromDefine);
 
   final String backendBaseUrl;

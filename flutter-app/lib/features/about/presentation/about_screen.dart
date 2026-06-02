@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../ads/ad_banner.dart';
 import '../../../features/diagnostics/presentation/diagnostics_screen.dart';
 import '../../../features/feedback/presentation/feedback_screen.dart';
 import '../../../widgets/asset_header.dart';
@@ -70,8 +69,6 @@ class AboutScreen extends StatelessWidget {
               icon: const Icon(Icons.settings_outlined),
               label: const Text('Diagnostics'),
             ),
-            const SizedBox(height: 16),
-            const AdBannerPlaceholder(),
           ],
         ),
       ),

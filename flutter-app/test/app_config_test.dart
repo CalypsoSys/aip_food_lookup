@@ -24,4 +24,12 @@ void main() {
 
     expect(config.publicHeaders, isEmpty);
   });
+
+  test('ad config defaults to Google test banner values', () {
+    expect(AppConfig.adsEnabled, isTrue);
+    expect(
+      AppConfig.adMobBannerAdUnitId,
+      'ca-app-pub-3940256099942544/6300978111',
+    );
+  });
 }

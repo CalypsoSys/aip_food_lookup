@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../ads/ad_banner.dart';
 import '../../../widgets/status_card.dart';
 import 'category_controller.dart';
 import 'category_list_screen.dart';
@@ -97,8 +96,6 @@ class _CategoryDetailsScreenState extends State<CategoryDetailsScreen> {
                         },
                       ),
                     ),
-                  const SizedBox(height: 16),
-                  const AdBannerPlaceholder(),
                 ],
               ),
             );

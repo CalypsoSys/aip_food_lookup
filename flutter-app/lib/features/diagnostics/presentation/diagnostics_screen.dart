@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../../ads/ad_banner.dart';
 import '../../../widgets/status_card.dart';
 import 'diagnostics_controller.dart';
 
@@ -87,8 +86,6 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                     onAction: _controller.testConnection,
                   ),
                 ],
-                const SizedBox(height: 16),
-                const AdBannerPlaceholder(),
               ],
             ),
           ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../ads/ad_banner.dart';
 import '../../../widgets/status_card.dart';
 import 'category_controller.dart';
 
@@ -88,8 +87,6 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                     ),
                   for (final food in _filteredItems(state))
                     Card(child: ListTile(title: Text(food))),
-                  const SizedBox(height: 16),
-                  const AdBannerPlaceholder(),
                 ],
               ),
             );

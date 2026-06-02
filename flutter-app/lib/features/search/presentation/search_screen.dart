@@ -179,7 +179,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   onItemTap: _copyResult,
                 ),
                 const SizedBox(height: 16),
-                const AdBannerPlaceholder(),
+                const Center(child: SearchAdBanner()),
               ],
             ),
           ),
