@@ -19,14 +19,15 @@ For local gateway-secret testing:
 
 ```bash
 cd cmd/aip_food_lookup
-AIP__API__RequireGatewaySecret=true AIP__API__GatewaySecret=local-secret AIP_DATA_FOLDER=../../data go run .
+AIP_GATEWAY_SECRET="$(openssl rand -hex 24)"
+AIP__API__RequireGatewaySecret=true AIP__API__GatewaySecret="$AIP_GATEWAY_SECRET" AIP_DATA_FOLDER=../../data go run .
 ```
 
 Then:
 
 ```bash
 curl -i "http://127.0.0.1:8080/search?key=apple"
-curl -i -H "X-Internal-Api-Key: local-secret" "http://127.0.0.1:8080/search?key=apple"
+curl -i -H "X-Internal-Api-Key: $AIP_GATEWAY_SECRET" "http://127.0.0.1:8080/search?key=apple"
 ```
 
 ## Flutter Android

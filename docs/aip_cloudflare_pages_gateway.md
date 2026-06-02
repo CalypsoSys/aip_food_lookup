@@ -51,8 +51,13 @@ The repo includes the server-side proxy at:
 frontend/functions/api/[[path]].ts
 ```
 
-The Pages Function forwards `/api/search`, `/api/categories`, `/api/feedback`, and future `/api/*` paths to
-`AIP_ORIGIN_BASE_URL`, preserving the method, query string, and request body. It deletes any client-supplied
-`X-Internal-Api-Key` header, then injects the configured `AIP_GATEWAY_SECRET`.
+It also includes `frontend/functions/_middleware.ts`, which returns `404` for common credential-probe paths before the
+SPA fallback or API proxy can answer them.
+
+The Pages Function forwards only the known public API paths: `/api/search`, `/api/suggest`, `/api/categories`,
+`/api/subcategory`, and `/api/feedback`. Unknown `/api/*` paths return `404` at the Pages edge so credential probes
+such as `/api/.env` are not forwarded to the origin. For allowed paths, the function preserves the method, query
+string, and request body. It deletes any client-supplied `X-Internal-Api-Key` header, then injects the configured
+`AIP_GATEWAY_SECRET`.
 
 Keep the Go API `AllowedOrigins` set to the deployed Pages origins.

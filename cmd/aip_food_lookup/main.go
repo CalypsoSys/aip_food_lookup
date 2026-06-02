@@ -129,6 +129,16 @@ func registerHandlers(mux *http.ServeMux) {
 
 // healthHandler gives load balancers and local smoke tests a simple API check.
 func healthHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = fmt.Fprint(w, "AIP Food Lookup API")
 }

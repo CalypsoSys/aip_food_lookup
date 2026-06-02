@@ -5,6 +5,7 @@ import {
   createProxyRequest,
   gatewayHeaderName,
   readProxyEnv,
+  shouldProxyApiPath,
 } from '../functions/api/proxy';
 
 const originEnvName = ['AIP', 'ORIGIN', 'BASE', 'URL'].join('_');
@@ -25,6 +26,14 @@ describe('Pages Function API proxy', () => {
     expect(() => readProxyEnv({ [originEnvName]: 'https://aip-origin.example.com' })).toThrow(
       'Missing Cloudflare Pages API proxy configuration.',
     );
+  });
+
+  it('only proxies known public API paths', () => {
+    expect(shouldProxyApiPath('search')).toBe(true);
+    expect(shouldProxyApiPath('categories')).toBe(true);
+    expect(shouldProxyApiPath('.env')).toBe(false);
+    expect(shouldProxyApiPath(['config', 'service-account.json'])).toBe(false);
+    expect(shouldProxyApiPath(undefined)).toBe(false);
   });
 
   it('replaces any client-supplied gateway header with the Pages binding value', async () => {

@@ -29,6 +29,19 @@ export function buildOriginUrl(requestUrl: string, originBaseUrl: string, pathPa
   return origin.toString();
 }
 
+export function shouldProxyApiPath(pathParam: PathParam): boolean {
+  switch (normalizeForwardedPath(pathParam)) {
+    case 'search':
+    case 'suggest':
+    case 'feedback':
+    case 'categories':
+    case 'subcategory':
+      return true;
+    default:
+      return false;
+  }
+}
+
 export function createProxyRequest(request: Request, env: PagesEnv, pathParam: PathParam): Request {
   const { originBaseUrl, gatewaySecret } = readProxyEnv(env);
   const headers = new Headers(request.headers);

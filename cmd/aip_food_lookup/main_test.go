@@ -133,6 +133,37 @@ func TestSearchHandlerReturnsJsonResults(t *testing.T) {
 	}
 }
 
+func TestHealthRouteDoesNotAnswerProbePaths(t *testing.T) {
+	mux := http.NewServeMux()
+	registerHandlers(mux)
+
+	tests := []struct {
+		name       string
+		method     string
+		path       string
+		wantStatus int
+	}{
+		{name: "root health", method: http.MethodGet, path: "/", wantStatus: http.StatusOK},
+		{name: "root rejects post", method: http.MethodPost, path: "/", wantStatus: http.StatusMethodNotAllowed},
+		{name: "env probe", method: http.MethodGet, path: "/.env", wantStatus: http.StatusNotFound},
+		{name: "api env probe", method: http.MethodGet, path: "/api/.env", wantStatus: http.StatusNotFound},
+		{name: "credential json probe", method: http.MethodGet, path: "/service-account.json", wantStatus: http.StatusNotFound},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request := httptest.NewRequest(tt.method, tt.path, nil)
+			response := httptest.NewRecorder()
+
+			mux.ServeHTTP(response, request)
+
+			if response.Code != tt.wantStatus {
+				t.Fatalf("expected status %d, got %d: %s", tt.wantStatus, response.Code, response.Body.String())
+			}
+		})
+	}
+}
+
 func TestSoundSearchPorkDoesNotReturnUnrelatedCatalogItems(t *testing.T) {
 	testStore := newFoodStore("../../data")
 	if err := testStore.processDirectory("../../data"); err != nil {
