@@ -114,12 +114,28 @@ h3 {
 }
 
 .lookup-panel,
-.narrow-panel {
+.narrow-panel,
+.policy-panel {
   max-width: 1140px;
 }
 
 .narrow-panel {
   max-width: 720px;
+}
+
+.policy-panel {
+  max-width: 880px;
+}
+
+.policy-copy ul {
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.policy-copy li {
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
 }
 
 .content-grid {
