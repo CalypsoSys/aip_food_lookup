@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../ads/ad_banner.dart';
 import '../../../widgets/asset_header.dart';
 import '../../../widgets/status_card.dart';
 import 'search_controller.dart' as feature;
@@ -178,8 +177,6 @@ class _SearchScreenState extends State<SearchScreen> {
                   status: _ResultStatus.notAllowed,
                   onItemTap: _copyResult,
                 ),
-                const SizedBox(height: 16),
-                const Center(child: SearchAdBanner()),
               ],
             ),
           ),
