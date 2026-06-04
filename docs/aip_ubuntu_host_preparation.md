@@ -239,21 +239,18 @@ sudo chown -R caddy:caddy /srv/logs/caddy
 sudo chmod 755 /srv/logs/caddy
 ```
 
-Recommended Caddyfile:
+Use the shared workbench host Caddyfile guidance as the starting point:
 
-```caddy
-{
-    auto_https off
+```text
+CalypsoSys operations workbench:
+  docs/caddy.md
+  templates/caddy/calypsosys-host.Caddyfile.example
+```
 
-    log {
-        output file /srv/logs/caddy/caddy.log
-        format console
-    }
-}
+AIP Food Lookup needs this route in the shared host Caddyfile:
 
-http://api.hashimojoe.com {
-    reverse_proxy 127.0.0.1:8084
-}
+```text
+api.hashimojoe.com -> 127.0.0.1:8084
 ```
 
 Validate and start Caddy:

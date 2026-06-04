@@ -22,23 +22,22 @@ sudo chown -R caddy:caddy /srv/logs/caddy
 sudo chmod 755 /srv/logs/caddy
 ```
 
-## Caddyfile
+## Shared Host Caddyfile
 
-For the tunnel pattern, Caddy can listen on plain HTTP locally:
+The authoritative Caddyfile is host-owned, not repo-owned. Keep the deployable
+`/etc/caddy/Caddyfile` on the server and use the shared workbench reference as the
+starting point:
 
-```caddy
-{
-    auto_https off
+```text
+CalypsoSys operations workbench:
+  docs/caddy.md
+  templates/caddy/calypsosys-host.Caddyfile.example
+```
 
-    log {
-        output file /srv/logs/caddy/caddy.log
-        format console
-    }
-}
+AIP Food Lookup needs this route in the shared host Caddyfile:
 
-http://api.hashimojoe.com {
-    reverse_proxy 127.0.0.1:8084
-}
+```text
+api.hashimojoe.com -> 127.0.0.1:8084
 ```
 
 ## Validate
