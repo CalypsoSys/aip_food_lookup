@@ -85,6 +85,10 @@ class SearchController extends ValueNotifier<SearchState> {
     );
   }
 
+  void clearRecentSearches() {
+    value = value.copyWith(recentSearches: const []);
+  }
+
   Future<void> selectRecentSearch(String query) async {
     value = value.copyWith(query: query, clearError: true);
     _debounce?.cancel();

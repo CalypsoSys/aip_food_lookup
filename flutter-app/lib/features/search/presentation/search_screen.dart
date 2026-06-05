@@ -70,20 +70,37 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 if (state.recentSearches.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: [
-                      for (final recentSearch in state.recentSearches)
-                        ActionChip(
-                          label: Text(recentSearch),
-                          avatar: const Icon(Icons.history, size: 18),
-                          onPressed: () {
-                            _textController.text = recentSearch;
-                            _controller.selectRecentSearch(recentSearch);
-                          },
+                  SizedBox(
+                    height: 42,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: state.recentSearches.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 8),
+                            itemBuilder: (context, index) {
+                              final recentSearch = state.recentSearches[index];
+                              return ActionChip(
+                                label: Text(recentSearch),
+                                avatar: const Icon(Icons.history, size: 18),
+                                onPressed: () {
+                                  _textController.text = recentSearch;
+                                  _controller.selectRecentSearch(recentSearch);
+                                },
+                              );
+                            },
+                          ),
                         ),
-                    ],
+                        const SizedBox(width: 4),
+                        IconButton(
+                          tooltip: 'Clear recent searches',
+                          onPressed: _controller.clearRecentSearches,
+                          icon: const Icon(Icons.delete_outline),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
                 const SizedBox(height: 8),

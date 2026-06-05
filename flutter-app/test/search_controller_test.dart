@@ -70,6 +70,21 @@ void main() {
     );
   });
 
+  test('clearRecentSearches keeps current search state', () async {
+    final api = _FakeFoodApi();
+    final controller = SearchController(foodApi: api);
+
+    controller.updateQuery('apple');
+    await controller.updateSearchType(defaultSearchType);
+
+    controller.clearRecentSearches();
+
+    expect(controller.value.query, 'apple');
+    expect(controller.value.result.allowed, ['Apples']);
+    expect(controller.value.hasSearched, isTrue);
+    expect(controller.value.recentSearches, isEmpty);
+  });
+
   test('selectRecentSearch reruns search with selected query', () async {
     final api = _FakeFoodApi();
     final controller = SearchController(foodApi: api);
