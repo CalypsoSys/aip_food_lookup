@@ -34,6 +34,45 @@ func TestGatewaySecretMiddlewareProtectsApiRoutes(t *testing.T) {
 	}
 }
 
+func TestGatewaySecretMiddlewareProtectsAdminReloadWithoutPublicApiFlag(t *testing.T) {
+	config := appConfig{
+		GatewaySecretHeaderName: "X-Internal-Api-Key",
+		GatewaySecret:           "secret",
+	}
+	handler := gatewaySecretMiddleware(config, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, adminReloadPath, nil))
+
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status 401, got %d", response.Code)
+	}
+
+	request := httptest.NewRequest(http.MethodPost, adminReloadPath, nil)
+	request.Header.Set("X-Internal-Api-Key", "secret")
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", response.Code)
+	}
+}
+
+func TestGatewaySecretMiddlewareRejectsAdminReloadWithoutConfiguredSecret(t *testing.T) {
+	handler := gatewaySecretMiddleware(appConfig{}, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, adminReloadPath, nil))
+
+	if response.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected status 503, got %d", response.Code)
+	}
+}
+
 func TestGatewaySecretMiddlewareSkipsHealth(t *testing.T) {
 	config := appConfig{
 		RequireGatewaySecret: true,

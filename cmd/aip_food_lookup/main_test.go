@@ -164,6 +164,92 @@ func TestHealthRouteDoesNotAnswerProbePaths(t *testing.T) {
 	}
 }
 
+func TestAdminReloadHandlerRequiresPost(t *testing.T) {
+	store = newFoodStore(t.TempDir())
+
+	request := httptest.NewRequest(http.MethodGet, adminReloadPath, nil)
+	response := httptest.NewRecorder()
+
+	adminReloadHandler(response, request)
+
+	if response.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("expected status 405, got %d", response.Code)
+	}
+}
+
+func TestAdminReloadHandlerReloadsCatalogFromDisk(t *testing.T) {
+	tempDir := t.TempDir()
+	writeTestCatalogFile(t, tempDir, "allowed", "fruit.dat", "Apple\n")
+	writeTestCatalogFile(t, tempDir, "not_allowed", "grains.dat", "Wheat\n")
+
+	store = newFoodStore(tempDir)
+	if err := store.processDirectory(tempDir); err != nil {
+		t.Fatalf("processDirectory returned error: %v", err)
+	}
+
+	writeTestCatalogFile(t, tempDir, "allowed", "fruit.dat", "Apple\nBanana\n")
+
+	request := httptest.NewRequest(http.MethodPost, adminReloadPath, nil)
+	response := httptest.NewRecorder()
+
+	adminReloadHandler(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", response.Code, response.Body.String())
+	}
+
+	var result adminReloadResponse
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		t.Fatalf("expected JSON response: %v", err)
+	}
+	if !result.OK || result.Foods != 3 {
+		t.Fatalf("unexpected reload response: %#v", result)
+	}
+
+	reloadedStore := getStore()
+	searchResult := reloadedStore.match("Banana", "searchbytext")
+	if !contains(searchResult.Allowed, "Banana") {
+		t.Fatalf("expected Banana after reload, got %#v", searchResult.Allowed)
+	}
+}
+
+func TestAdminReloadHandlerKeepsExistingCatalogOnReloadFailure(t *testing.T) {
+	tempDir := t.TempDir()
+	writeTestCatalogFile(t, tempDir, "allowed", "fruit.dat", "Apple\n")
+
+	store = newFoodStore(tempDir)
+	store.errorLogPath = filepath.Join(tempDir, "errors.log")
+	if err := store.processDirectory(tempDir); err != nil {
+		t.Fatalf("processDirectory returned error: %v", err)
+	}
+	if err := os.RemoveAll(tempDir); err != nil {
+		t.Fatalf("remove temp catalog: %v", err)
+	}
+
+	request := httptest.NewRequest(http.MethodPost, adminReloadPath, nil)
+	response := httptest.NewRecorder()
+
+	adminReloadHandler(response, request)
+
+	if response.Code != http.StatusInternalServerError {
+		t.Fatalf("expected status 500, got %d: %s", response.Code, response.Body.String())
+	}
+
+	var result adminReloadResponse
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		t.Fatalf("expected JSON response: %v", err)
+	}
+	if result.OK || result.Error == "" {
+		t.Fatalf("unexpected reload failure response: %#v", result)
+	}
+
+	currentStore := getStore()
+	searchResult := currentStore.match("Apple", "searchbytext")
+	if !contains(searchResult.Allowed, "Apple") {
+		t.Fatalf("expected existing Apple catalog to remain loaded, got %#v", searchResult.Allowed)
+	}
+}
+
 func TestSoundSearchPorkDoesNotReturnUnrelatedCatalogItems(t *testing.T) {
 	testStore := newFoodStore("../../data")
 	if err := testStore.processDirectory("../../data"); err != nil {
@@ -365,6 +451,18 @@ func TestSoundSearchDoesNotMatchNearbyNumericMetaphoneKey(t *testing.T) {
 
 	if contains(result.Allowed, "Near Numeric Key") {
 		t.Fatalf("expected nearby numeric metaphone key not to match, got %#v", result.Allowed)
+	}
+}
+
+func writeTestCatalogFile(t *testing.T, root string, folder string, name string, content string) {
+	t.Helper()
+
+	directory := filepath.Join(root, folder)
+	if err := os.MkdirAll(directory, 0755); err != nil {
+		t.Fatalf("create test catalog directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(directory, name), []byte(content), 0644); err != nil {
+		t.Fatalf("write test catalog file: %v", err)
 	}
 }
 

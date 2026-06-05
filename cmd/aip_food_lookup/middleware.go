@@ -81,11 +81,16 @@ func isAllowedOrigin(allowedOrigins []string, origin string) bool {
 
 func gatewaySecretMiddleware(config appConfig, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodOptions ||
-			!config.RequireGatewaySecret ||
-			!requiresGatewaySecret(r.URL.Path) ||
-			config.GatewaySecret == "" {
+		if r.Method == http.MethodOptions || !requiresGatewaySecret(r.URL.Path) {
 			next.ServeHTTP(w, r)
+			return
+		}
+		if !config.RequireGatewaySecret && !requiresAdminGatewaySecret(r.URL.Path) {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if config.GatewaySecret == "" {
+			http.Error(w, "Gateway secret is not configured", http.StatusServiceUnavailable)
 			return
 		}
 
@@ -106,11 +111,15 @@ func gatewaySecretMiddleware(config appConfig, next http.Handler) http.Handler {
 
 func requiresGatewaySecret(requestPath string) bool {
 	switch requestPath {
-	case "/search", "/suggest", "/feedback", "/categories", "/subcategory":
+	case "/search", "/suggest", "/feedback", "/categories", "/subcategory", adminReloadPath:
 		return true
 	default:
 		return false
 	}
+}
+
+func requiresAdminGatewaySecret(requestPath string) bool {
+	return requestPath == adminReloadPath
 }
 
 func bodyLimitMiddleware(config appConfig, next http.Handler) http.Handler {

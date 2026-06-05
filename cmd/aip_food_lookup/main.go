@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/CalypsoSys/godoublemetaphone/pkg/godoublemetaphone"
@@ -23,6 +24,7 @@ const (
 	allowedNotAllowedMaxLen = 50
 	feedbackMessageMaxLen   = 2000
 	feedbackFieldMaxLen     = 200
+	adminReloadPath         = "/admin/reload"
 )
 
 type responseData struct {
@@ -33,6 +35,14 @@ type responseData struct {
 type requestData struct {
 	InputText string `json:"inputText"`
 	Allowed   bool   `json:"allowed"`
+}
+
+type adminReloadResponse struct {
+	OK                   bool   `json:"ok"`
+	AllowedCategories    int    `json:"allowedCategories,omitempty"`
+	NotAllowedCategories int    `json:"notAllowedCategories,omitempty"`
+	Foods                int    `json:"foods,omitempty"`
+	Error                string `json:"error,omitempty"`
 }
 
 type feedbackRequest struct {
@@ -76,7 +86,10 @@ type suggestionSink interface {
 	submitSuggestion(requestData) error
 }
 
-var store = newFoodStore("")
+var (
+	store     = newFoodStore("")
+	storeLock sync.RWMutex
+)
 
 // newFoodStore initializes the in-memory index and suggestion caches.
 func newFoodStore(dataFolder string) *foodStore {
@@ -125,6 +138,7 @@ func registerHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("/feedback", feedbackHandler)
 	mux.HandleFunc("/categories", categoriesHandler)
 	mux.HandleFunc("/subcategory", subCategoryHandler)
+	mux.HandleFunc(adminReloadPath, adminReloadHandler)
 }
 
 // healthHandler gives load balancers and local smoke tests a simple API check.
@@ -161,7 +175,8 @@ func feedbackHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := store.feedbackSink.submitFeedback(normalized); err != nil {
+	currentStore := getStore()
+	if err := currentStore.feedbackSink.submitFeedback(normalized); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -178,7 +193,8 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := store.match(key, r.URL.Query().Get("type"))
+	currentStore := getStore()
+	response := currentStore.match(key, r.URL.Query().Get("type"))
 	commonResponse(w, response)
 }
 
@@ -199,7 +215,8 @@ func suggestHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Suggestion too short", http.StatusBadRequest)
 		return
 	}
-	if err := store.submitSuggestion(request.Allowed, request.InputText); err != nil {
+	currentStore := getStore()
+	if err := currentStore.submitSuggestion(request.Allowed, request.InputText); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -210,9 +227,10 @@ func suggestHandler(w http.ResponseWriter, r *http.Request) {
 
 // categoriesHandler returns the available top-level allowed/not allowed groups.
 func categoriesHandler(w http.ResponseWriter, r *http.Request) {
+	currentStore := getStore()
 	commonResponse(w, responseData{
-		Allowed:    store.allowedCategories,
-		NotAllowed: store.notAllowedCategories,
+		Allowed:    currentStore.allowedCategories,
+		NotAllowed: currentStore.notAllowedCategories,
 	})
 }
 
@@ -230,8 +248,75 @@ func subCategoryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := store.subCategory(category, subCategory)
+	currentStore := getStore()
+	response := currentStore.subCategory(category, subCategory)
 	commonResponse(w, response)
+}
+
+// adminReloadHandler reloads catalog files without restarting the container.
+func adminReloadHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	nextStore, err := reloadFoodStore()
+	if err != nil {
+		writeErrorLog(getStore().errorLogPath, fmt.Sprintf("catalog reload failed: %v", err))
+		writeAdminReloadResponse(w, http.StatusInternalServerError, adminReloadResponse{
+			OK:    false,
+			Error: "catalog reload failed",
+		})
+		return
+	}
+
+	writeAdminReloadResponse(w, http.StatusOK, adminReloadResponse{
+		OK:                   true,
+		AllowedCategories:    len(nextStore.allowedCategories),
+		NotAllowedCategories: len(nextStore.notAllowedCategories),
+		Foods:                len(nextStore.nameFoods),
+	})
+}
+
+func reloadFoodStore() (*foodStore, error) {
+	currentStore := getStore()
+	if currentStore == nil {
+		return nil, errors.New("food store is not initialized")
+	}
+
+	dataFolder := strings.TrimSpace(currentStore.dataFolder)
+	if dataFolder == "" {
+		dataFolder = "data"
+	}
+
+	nextStore := newFoodStore(dataFolder)
+	nextStore.errorLogPath = currentStore.errorLogPath
+	nextStore.feedbackSink = currentStore.feedbackSink
+	nextStore.suggestionSink = currentStore.suggestionSink
+	if err := nextStore.processDirectory(dataFolder); err != nil {
+		return nil, err
+	}
+
+	setStore(nextStore)
+	return nextStore, nil
+}
+
+func writeAdminReloadResponse(w http.ResponseWriter, statusCode int, response adminReloadResponse) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(response)
+}
+
+func getStore() *foodStore {
+	storeLock.RLock()
+	defer storeLock.RUnlock()
+	return store
+}
+
+func setStore(nextStore *foodStore) {
+	storeLock.Lock()
+	defer storeLock.Unlock()
+	store = nextStore
 }
 
 // commonResponse serializes the API's shared response envelope.
