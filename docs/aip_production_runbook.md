@@ -131,10 +131,16 @@ For the Cloudflare Pages project, configure these environment bindings in Cloudf
 From the repo root in WSL/Linux:
 
 ```bash
+git switch main
+git pull --ff-only
+git log --oneline -1
 mkdir -p /mnt/c/transfer
 if [ -f /mnt/c/transfer/aip-food-lookup-api-latest.tar.gz ]; then mv /mnt/c/transfer/aip-food-lookup-api-latest.tar.gz /mnt/c/transfer/aip-food-lookup-api-latest.lastgood.tar.gz; fi
 TRANSFER_DIR=/mnt/c/transfer scripts/build.sh
 ```
+
+Confirm the commit shown by `git log --oneline -1` is the version you intend to deploy before copying the tarball to the
+server.
 
 That leaves:
 
@@ -334,7 +340,11 @@ On the Ubuntu host:
 ```bash
 cd /srv/stacks/aip-food-lookup/api
 gzip -dc aip-food-lookup-api-latest.tar.gz | docker load
+./scripts/compose-aip.sh up -d --force-recreate
 ```
+
+The `--force-recreate` step is important when the image tag stays `aip-food-lookup-api:latest`; otherwise the running
+container may still be using the previous image.
 
 ## Deploy seed food data
 
@@ -349,13 +359,16 @@ find data/allowed data/not_allowed -type f | sort
 That refreshes the tracked catalog files and leaves server-created runtime files in `/srv/stacks/aip-food-lookup/data`
 alone.
 
-The API loads the catalog into memory at startup. If the stack is already running when seed data changes, restart the
-API container after this step:
+The API loads the catalog into memory. If the stack is already running when seed data changes, reload the in-memory
+catalog after this step:
 
 ```bash
 cd /srv/stacks/aip-food-lookup/api
-./scripts/compose-aip.sh restart
+curl -i -X POST -H "X-Internal-Api-Key: ${gatewaySecret}" http://127.0.0.1:8084/admin/reload
 ```
+
+If that reload command returns `404`, the host is still running an older API image. Load and recreate the API container
+from the latest image first.
 
 If you intentionally need to remove catalog files that no longer exist in Git, back up the data directory first, then
 replace only the tracked catalog directories:
@@ -389,6 +402,15 @@ curl -i -H "X-Internal-Api-Key: ${gatewaySecret}" -H "Content-Type: application/
 
 If gateway-secret enforcement is enabled, direct protected requests without `X-Internal-Api-Key` should return `401`.
 The keyed search request should return JSON results, and the keyed suggestion request should return `200`.
+
+Reload catalog data after updating files on the host:
+
+```bash
+curl -i -X POST -H "X-Internal-Api-Key: ${gatewaySecret}" http://127.0.0.1:8084/admin/reload
+```
+
+The reload endpoint rebuilds the in-memory catalog from disk without restarting Docker. Mobile and web clients see the
+updated catalog on their next API request, such as the next search or category load.
 
 Check the Caddy path:
 
