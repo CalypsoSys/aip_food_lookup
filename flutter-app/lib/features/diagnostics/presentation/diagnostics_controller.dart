@@ -38,10 +38,13 @@ class DiagnosticsController extends ValueNotifier<DiagnosticsState> {
     AppConfig config = AppConfig.dev,
     HealthCheck? healthCheck,
   })  : _healthCheck = healthCheck ??
-            (() => ApiClient(
-                      baseUrl: config.backendBaseUrl,
-                      defaultHeaders: config.publicHeaders,
-                    ).getText('/')),
+            (() async {
+              await ApiClient(
+                baseUrl: config.backendBaseUrl,
+                defaultHeaders: config.publicHeaders,
+              ).getJson('/categories');
+              return 'Backend responded.';
+            }),
         super(DiagnosticsState(backendUrl: config.backendBaseUrl));
 
   final HealthCheck _healthCheck;
