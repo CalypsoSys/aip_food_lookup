@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../models/search_result.dart';
 import 'search_controller.dart' as feature;
 
 class SearchScreen extends StatefulWidget {
@@ -16,6 +17,8 @@ class _SearchScreenState extends State<SearchScreen> {
   late final feature.SearchController _controller;
   late final TextEditingController _textController;
   late final bool _ownsController;
+  bool _showSuggestionChoices = false;
+  String _suggestionQuery = '';
 
   @override
   void initState() {
@@ -39,13 +42,21 @@ class _SearchScreenState extends State<SearchScreen> {
     return ValueListenableBuilder<feature.SearchState>(
       valueListenable: _controller,
       builder: (context, state, _) {
-        final canSuggest = state.query.trim().length > 2 && !state.isSuggesting;
+        final query = state.query.trim();
+        final canSuggest = query.length > 2 && !state.isSuggesting;
         final hasMatches = state.result.allowed.isNotEmpty ||
             state.result.notAllowed.isNotEmpty;
-        final showSuggestions = state.query.trim().length > 2 &&
+        final hasExactMatch = _hasExactFoodMatch(
+          query,
+          state.result.allowed,
+          state.result.notAllowed,
+        );
+        final showSuggestions = query.length > 2 &&
             state.errorMessage == null &&
             (state.isSuggesting ||
-                (state.hasSearched && !state.isLoading && !hasMatches));
+                (state.hasSearched && !state.isLoading && !hasExactMatch));
+        final suggestionChoicesVisible = !hasMatches ||
+            (_showSuggestionChoices && _suggestionQuery == query);
         return Scaffold(
           body: SafeArea(
             child: ListView(
@@ -92,8 +103,17 @@ class _SearchScreenState extends State<SearchScreen> {
                 if (showSuggestions) ...[
                   const SizedBox(height: 8),
                   _SuggestionActions(
+                    query: query,
+                    hasMatches: hasMatches,
                     canSuggest: canSuggest,
                     isSuggesting: state.isSuggesting,
+                    isExpanded: suggestionChoicesVisible,
+                    onExpand: () {
+                      setState(() {
+                        _showSuggestionChoices = true;
+                        _suggestionQuery = query;
+                      });
+                    },
                     onSuggestAllowed: () => _suggest(context, allowed: true),
                     onSuggestNotAllowed: () =>
                         _suggest(context, allowed: false),
@@ -203,6 +223,66 @@ class _SearchScreenState extends State<SearchScreen> {
       SnackBar(content: Text('Copied "$result"')),
     );
   }
+}
+
+bool _hasExactFoodMatch(
+  String query,
+  List<String> allowed,
+  List<String> notAllowed,
+) {
+  final queryKeys = _foodMatchKeys(query);
+  if (queryKeys.isEmpty) {
+    return false;
+  }
+
+  return [...allowed, ...notAllowed].any((food) {
+    final foodKeys = _foodMatchKeys(food);
+    return queryKeys.any(foodKeys.contains);
+  });
+}
+
+Set<String> _foodMatchKeys(String value) {
+  final normalized = cleanFoodLabel(value)
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
+      .trim()
+      .replaceAll(RegExp(r'\s+'), ' ');
+  if (normalized.isEmpty) {
+    return const {};
+  }
+
+  return {
+    normalized,
+    _singularizeLastWord(normalized),
+  };
+}
+
+String _singularizeLastWord(String value) {
+  final words = value.split(' ');
+  final lastWord = words.last;
+  final singular = _singularizeWord(lastWord);
+  if (singular == lastWord) {
+    return value;
+  }
+  return [...words.take(words.length - 1), singular].join(' ');
+}
+
+String _singularizeWord(String value) {
+  if (value.length <= 3 || value.endsWith('ss')) {
+    return value;
+  }
+  if (value.endsWith('ies') && value.length > 4) {
+    return '${value.substring(0, value.length - 3)}y';
+  }
+  if (value.endsWith('oes') ||
+      value.endsWith('ches') ||
+      value.endsWith('shes')) {
+    return value.substring(0, value.length - 2);
+  }
+  if (value.endsWith('s') && !value.endsWith('us')) {
+    return value.substring(0, value.length - 1);
+  }
+  return value;
 }
 
 enum _ResultStatus { allowed, notAllowed }
@@ -408,49 +488,106 @@ class _LookupMessage extends StatelessWidget {
 
 class _SuggestionActions extends StatelessWidget {
   const _SuggestionActions({
+    required this.query,
+    required this.hasMatches,
     required this.canSuggest,
     required this.isSuggesting,
+    required this.isExpanded,
+    required this.onExpand,
     required this.onSuggestAllowed,
     required this.onSuggestNotAllowed,
   });
 
+  final String query;
+  final bool hasMatches;
   final bool canSuggest;
   final bool isSuggesting;
+  final bool isExpanded;
+  final VoidCallback onExpand;
   final VoidCallback onSuggestAllowed;
   final VoidCallback onSuggestNotAllowed;
 
   @override
   Widget build(BuildContext context) {
+    if (!isExpanded) {
+      return Card(
+        child: ListTile(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          leading: const Icon(Icons.add_comment_outlined),
+          title: const Text('Not seeing the food you meant?'),
+          subtitle: Text(
+            'Suggest "$query"',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: const Icon(Icons.expand_more),
+          onTap: canSuggest ? onExpand : null,
+        ),
+      );
+    }
+
+    final compactChoices = hasMatches;
+    final title =
+        compactChoices ? 'Suggest "$query"' : 'Missing from the catalog?';
+    final subtitle = compactChoices
+        ? 'Send this food for review if the exact item is missing.'
+        : 'Send a suggestion only when the lookup does not find a clear match.';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Missing from the catalog?',
+          title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: 6),
         Text(
-          'Send a suggestion only when the lookup does not find a clear match.',
+          subtitle,
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: canSuggest ? onSuggestAllowed : null,
-            icon: const Icon(Icons.check_circle_outline),
-            label: const Text('Suggest as allowed'),
+        if (compactChoices)
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: canSuggest ? onSuggestAllowed : null,
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('Allowed'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: canSuggest ? onSuggestNotAllowed : null,
+                  icon: const Icon(Icons.block),
+                  label: const Text('Not allowed'),
+                ),
+              ),
+            ],
+          )
+        else ...[
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: canSuggest ? onSuggestAllowed : null,
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('Suggest as allowed'),
+            ),
           ),
-        ),
-        const SizedBox(height: 6),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: canSuggest ? onSuggestNotAllowed : null,
-            icon: const Icon(Icons.block),
-            label: const Text('Suggest as not allowed'),
+          const SizedBox(height: 6),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: canSuggest ? onSuggestNotAllowed : null,
+              icon: const Icon(Icons.block),
+              label: const Text('Suggest as not allowed'),
+            ),
           ),
-        ),
+        ],
         if (isSuggesting) ...[
           const SizedBox(height: 8),
           const LinearProgressIndicator(),

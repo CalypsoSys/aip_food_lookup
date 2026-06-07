@@ -26,8 +26,36 @@ void main() {
     expect(find.text('Allowed on AIP (1)'), findsOneWidget);
     expect(find.text('Apples'), findsOneWidget);
     expect(find.text('Allowed match found'), findsNothing);
+    expect(find.text('Not seeing the food you meant?'), findsNothing);
     expect(find.text('Suggest as allowed'), findsNothing);
     expect(find.text('Suggest as not allowed'), findsNothing);
+  });
+
+  testWidgets('shows a compact suggestion prompt for partial matches',
+      (tester) async {
+    final controller = feature.SearchController(foodApi: _FakeFoodApi());
+    addTearDown(controller.dispose);
+    controller.value = const feature.SearchState(
+      query: 'turmeric powder',
+      hasSearched: true,
+      result: SearchResult(allowed: ['Turmeric'], notAllowed: []),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: SearchScreen(controller: controller)),
+    );
+
+    expect(find.text('Turmeric'), findsOneWidget);
+    expect(find.text('Not seeing the food you meant?'), findsOneWidget);
+    expect(find.text('Suggest "turmeric powder"'), findsOneWidget);
+    expect(find.text('Suggest as allowed'), findsNothing);
+    expect(find.text('Suggest as not allowed'), findsNothing);
+
+    await tester.tap(find.text('Not seeing the food you meant?'));
+    await tester.pump();
+
+    expect(find.widgetWithText(OutlinedButton, 'Allowed'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Not allowed'), findsOneWidget);
   });
 
   testWidgets('shows explicit suggestion actions after no matches',
