@@ -5,9 +5,11 @@ class AppConfig {
     this.appVersion = appVersionFromDefine,
   });
 
+  static const productionBackendBaseUrl = 'https://hashimojoe.com/api';
+
   static const backendUrlFromDefine = String.fromEnvironment(
     'AIP_BACKEND_URL',
-    defaultValue: 'http://10.0.2.2:8080',
+    defaultValue: productionBackendBaseUrl,
   );
 
   static const clientNameFromDefine = String.fromEnvironment(
@@ -17,7 +19,7 @@ class AppConfig {
 
   static const appVersionFromDefine = String.fromEnvironment(
     'AIP_APP_VERSION',
-    defaultValue: 'dev',
+    defaultValue: 'prod',
   );
 
   static const adsEnabled = bool.fromEnvironment(

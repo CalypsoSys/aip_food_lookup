@@ -18,18 +18,18 @@ For a physical Android device, replace `10.0.2.2` with the Windows machine LAN I
 
 ## Configuration
 
-The backend URL is supplied at build/run time:
+Production builds default to `https://hashimojoe.com/api`. Local development should override the backend URL at run time:
 
 ```powershell
 flutter run --dart-define=AIP_BACKEND_URL=http://10.0.2.2:8080 --dart-define=AIP_CLIENT_NAME=android --dart-define=AIP_APP_VERSION=dev
 ```
 
 Do not commit private backend URLs, production AdMob IDs, signing keys, tokens, or certificates.
-Do not put the internal API gateway secret in Flutter; production builds should use `https://hashimojoe.com/api`,
-where the Cloudflare Pages Function injects the secret server-side.
+Do not put the internal API gateway secret in Flutter; production builds use `https://hashimojoe.com/api`,
+where the Cloudflare Pages Function injects the secret server-side. Override the production default only when intentionally building against another backend.
 
 ```powershell
-flutter build apk --dart-define=AIP_BACKEND_URL=https://hashimojoe.com/api --dart-define=AIP_CLIENT_NAME=android --dart-define=AIP_APP_VERSION=prod
+flutter build apk --dart-define=AIP_CLIENT_NAME=android --dart-define=AIP_APP_VERSION=prod
 ```
 
 ## Ads
@@ -40,7 +40,7 @@ unit ID. Keep those defaults for local development and pre-store verification.
 Production ad IDs should be supplied at build time and should not be committed:
 
 ```powershell
-flutter build appbundle --release --dart-define=AIP_BACKEND_URL=https://hashimojoe.com/api --dart-define=AIP_CLIENT_NAME=android --dart-define=AIP_APP_VERSION=prod --dart-define=AIP_ADMOB_BANNER_AD_UNIT_ID=<ad-unit-id> --android-project-arg=AIP_ADMOB_APP_ID=<app-id>
+flutter build appbundle --release --dart-define=AIP_CLIENT_NAME=android --dart-define=AIP_APP_VERSION=prod --dart-define=AIP_ADMOB_BANNER_AD_UNIT_ID=<ad-unit-id> --android-project-arg=AIP_ADMOB_APP_ID=<app-id>
 ```
 
 Set `--dart-define=AIP_ADS_ENABLED=false` to hide the banner in a build.

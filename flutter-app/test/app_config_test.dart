@@ -2,6 +2,11 @@ import 'package:aip_food_lookup/app/config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('default backend points at the production API gateway', () {
+    expect(AppConfig.backendUrlFromDefine, 'https://hashimojoe.com/api');
+    expect(AppConfig.appVersionFromDefine, 'prod');
+  });
+
   test('publicHeaders includes mobile diagnostic headers', () {
     const config = AppConfig(
       backendBaseUrl: 'https://hashimojoe.com/api',

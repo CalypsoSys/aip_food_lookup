@@ -1,7 +1,7 @@
 name: aip_food_lookup
 description: Flutter migration of the AIP Food Lookup mobile app.
 publish_to: "none"
-version: 0.1.4+5
+version: 0.1.5+6
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
