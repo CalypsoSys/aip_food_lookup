@@ -50,6 +50,12 @@ The app includes an About tab with links to Feedback and Diagnostics. Diagnostic
 Feedback posts to the Go backend `/feedback` endpoint; Slack delivery is controlled by server-side webhook
 configuration and falls back to local JSONL storage when Slack is unavailable.
 
+## Offline Catalog Fallback
+
+Search and category browsing use the production API first. If the API is unreachable, the app falls back to
+`assets/catalog/catalog_snapshot.json`, which is generated from the repository `data/allowed` and `data/not_allowed`
+catalog files. Suggestions, feedback, and diagnostics remain server-only.
+
 ## App Identity Assets
 
 The Flutter app now carries migrated MAUI/recovered assets under `assets/identity/` and `assets/images/`. Android launcher icons are generated into `android/app/src/main/res/mipmap-*` from `assets/identity/app_icon.png`, and the native splash screen uses a padded app-mark image generated from the same source.
