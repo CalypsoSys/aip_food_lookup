@@ -18,6 +18,12 @@ class SearchResult {
     if (value is! List) {
       return const [];
     }
-    return value.whereType<String>().toList();
+    return value.whereType<String>().map(cleanFoodLabel).toList();
   }
+}
+
+String cleanFoodLabel(String value) {
+  return value
+      .replaceFirst(RegExp(r'\s*\(all\)\s*$', caseSensitive: false), '')
+      .trim();
 }

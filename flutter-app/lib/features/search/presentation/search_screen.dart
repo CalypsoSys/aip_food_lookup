@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../widgets/asset_header.dart';
-import '../../../widgets/status_card.dart';
 import 'search_controller.dart' as feature;
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({super.key, this.controller});
+
+  final feature.SearchController? controller;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -15,18 +15,22 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   late final feature.SearchController _controller;
   late final TextEditingController _textController;
+  late final bool _ownsController;
 
   @override
   void initState() {
     super.initState();
-    _controller = feature.SearchController();
+    _controller = widget.controller ?? feature.SearchController();
+    _ownsController = widget.controller == null;
     _textController = TextEditingController();
   }
 
   @override
   void dispose() {
     _textController.dispose();
-    _controller.dispose();
+    if (_ownsController) {
+      _controller.dispose();
+    }
     super.dispose();
   }
 
@@ -36,24 +40,22 @@ class _SearchScreenState extends State<SearchScreen> {
       valueListenable: _controller,
       builder: (context, state, _) {
         final canSuggest = state.query.trim().length > 2 && !state.isSuggesting;
+        final hasMatches = state.result.allowed.isNotEmpty ||
+            state.result.notAllowed.isNotEmpty;
+        final showSuggestions = state.query.trim().length > 2 &&
+            state.errorMessage == null &&
+            (state.isSuggesting ||
+                (state.hasSearched && !state.isLoading && !hasMatches));
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('AIP Food Lookup'),
-          ),
           body: SafeArea(
             child: ListView(
               padding: const EdgeInsets.all(12),
               children: [
-                const AssetHeader(
-                  assetName: 'assets/identity/adaptive_icon.png',
-                  height: 48,
-                ),
-                const SizedBox(height: 12),
                 TextField(
                   controller: _textController,
                   decoration: InputDecoration(
-                    labelText: 'Food',
-                    hintText: 'Enter a food to check, then suggest if needed',
+                    labelText: 'Search food',
+                    hintText: 'Type a food to check the AIP catalog',
                     suffixIcon: state.query.isEmpty
                         ? null
                         : IconButton(
@@ -68,8 +70,42 @@ class _SearchScreenState extends State<SearchScreen> {
                   textInputAction: TextInputAction.search,
                   onChanged: _controller.updateQuery,
                 ),
-                if (state.recentSearches.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _LookupSummary(state: state),
+                if (state.isLoading) ...[
                   const SizedBox(height: 8),
+                  const LinearProgressIndicator(),
+                ],
+                const SizedBox(height: 12),
+                _ResultSection(
+                  title: 'Allowed on AIP',
+                  items: state.result.allowed,
+                  status: _ResultStatus.allowed,
+                  onItemTap: _copyResult,
+                ),
+                _ResultSection(
+                  title: 'Not allowed on AIP',
+                  items: state.result.notAllowed,
+                  status: _ResultStatus.notAllowed,
+                  onItemTap: _copyResult,
+                ),
+                if (showSuggestions) ...[
+                  const SizedBox(height: 8),
+                  _SuggestionActions(
+                    canSuggest: canSuggest,
+                    isSuggesting: state.isSuggesting,
+                    onSuggestAllowed: () => _suggest(context, allowed: true),
+                    onSuggestNotAllowed: () =>
+                        _suggest(context, allowed: false),
+                  ),
+                ],
+                if (state.recentSearches.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Recent searches',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 6),
                   SizedBox(
                     height: 42,
                     child: Row(
@@ -103,96 +139,37 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 8),
-                Text(
-                  state.isSuggesting
-                      ? 'Submitting suggestion...'
-                      : 'Type at least 3 characters. Results update after you pause typing.',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: canSuggest
-                            ? () => _suggest(context, allowed: true)
-                            : null,
-                        icon: const Icon(Icons.check_circle_outline),
-                        label: const Text('Allowed'),
+                Theme(
+                  data: Theme.of(context).copyWith(
+                    dividerColor: Colors.transparent,
+                  ),
+                  child: ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: const EdgeInsets.only(bottom: 8),
+                    title: const Text('Advanced search'),
+                    subtitle: Text(state.searchType),
+                    children: [
+                      DropdownButtonFormField<String>(
+                        initialValue: state.searchType,
+                        decoration:
+                            const InputDecoration(labelText: 'Search type'),
+                        items: feature.searchTypes
+                            .map(
+                              (type) => DropdownMenuItem(
+                                value: type,
+                                child: Text(type),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            _controller.updateSearchType(value);
+                          }
+                        },
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: canSuggest
-                            ? () => _suggest(context, allowed: false)
-                            : null,
-                        icon: const Icon(Icons.block),
-                        label: const Text('Not allowed'),
-                      ),
-                    ),
-                  ],
-                ),
-                if (state.isSuggesting) ...[
-                  const SizedBox(height: 8),
-                  const LinearProgressIndicator(),
-                ],
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: state.searchType,
-                  decoration: const InputDecoration(labelText: 'Search type'),
-                  items: feature.searchTypes
-                      .map(
-                        (type) => DropdownMenuItem(
-                          value: type,
-                          child: Text(type),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      _controller.updateSearchType(value);
-                    }
-                  },
-                ),
-                if (state.isLoading) ...[
-                  const SizedBox(height: 16),
-                  const LinearProgressIndicator(),
-                ],
-                if (state.errorMessage != null) ...[
-                  const SizedBox(height: 16),
-                  StatusCard(
-                    title: state.errorMessage!,
-                    subtitle:
-                        'Check that your phone can reach the configured backend URL.',
-                    icon: Icons.wifi_off_outlined,
+                    ],
                   ),
-                ],
-                const SizedBox(height: 16),
-                _ResultSection(
-                  title: 'Allowed on AIP:',
-                  fallback: _fallbackText(
-                    state,
-                    suggestion: 'Tap Allowed to suggest this food for review.',
-                  ),
-                  items: state.result.allowed,
-                  hasSearched: state.hasSearched,
-                  status: _ResultStatus.allowed,
-                  onItemTap: _copyResult,
-                ),
-                const SizedBox(height: 12),
-                _ResultSection(
-                  title: 'NOT Allowed on AIP:',
-                  fallback: _fallbackText(
-                    state,
-                    suggestion:
-                        'Tap Not allowed to suggest this food for review.',
-                  ),
-                  items: state.result.notAllowed,
-                  hasSearched: state.hasSearched,
-                  status: _ResultStatus.notAllowed,
-                  onItemTap: _copyResult,
                 ),
               ],
             ),
@@ -226,40 +203,273 @@ class _SearchScreenState extends State<SearchScreen> {
       SnackBar(content: Text('Copied "$result"')),
     );
   }
-
-  String _fallbackText(
-    feature.SearchState state, {
-    required String suggestion,
-  }) {
-    if (state.query.trim().length < 3) {
-      return '';
-    }
-    if (state.isLoading) {
-      return 'Searching...';
-    }
-    if (state.hasSearched) {
-      return 'No matches found. $suggestion';
-    }
-    return suggestion;
-  }
 }
 
 enum _ResultStatus { allowed, notAllowed }
 
+class _LookupSummary extends StatelessWidget {
+  const _LookupSummary({required this.state});
+
+  final feature.SearchState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final allowedCount = state.result.allowed.length;
+    final notAllowedCount = state.result.notAllowed.length;
+    final hasMinimum = state.query.trim().length > 2;
+    final hasMatches = allowedCount > 0 || notAllowedCount > 0;
+
+    late final String title;
+    late final String subtitle;
+    late final IconData messageIcon;
+    late final Color messageColor;
+    var showMessage = true;
+
+    if (state.errorMessage != null) {
+      messageIcon = Icons.wifi_off_outlined;
+      messageColor = colorScheme.error;
+      title = state.errorMessage!;
+      subtitle = 'Check that your phone can reach the configured backend URL.';
+    } else if (!hasMinimum) {
+      messageIcon = Icons.search;
+      messageColor = colorScheme.primary;
+      title = 'Search the AIP catalog';
+      subtitle = 'Type at least 3 characters. Results appear automatically.';
+    } else if (state.isLoading || !state.hasSearched) {
+      messageIcon = Icons.manage_search;
+      messageColor = colorScheme.primary;
+      title = 'Checking the catalog';
+      subtitle = 'Looking for allowed and not allowed matches.';
+    } else if (allowedCount > 0 && notAllowedCount == 0) {
+      messageIcon = Icons.check_circle_outline;
+      messageColor = Colors.green;
+      showMessage = false;
+      title =
+          allowedCount == 1 ? 'Allowed match found' : 'Allowed matches found';
+      subtitle = allowedCount == 1
+          ? '1 allowed catalog match.'
+          : '$allowedCount allowed catalog matches.';
+    } else if (notAllowedCount > 0 && allowedCount == 0) {
+      messageIcon = Icons.block;
+      messageColor = colorScheme.error;
+      showMessage = false;
+      title = notAllowedCount == 1
+          ? 'Not allowed match found'
+          : 'Not allowed matches found';
+      subtitle = notAllowedCount == 1
+          ? '1 not allowed catalog match.'
+          : '$notAllowedCount not allowed catalog matches.';
+    } else if (hasMatches) {
+      messageIcon = Icons.compare_arrows;
+      messageColor = colorScheme.tertiary;
+      title = 'Mixed catalog results';
+      subtitle =
+          '$allowedCount allowed and $notAllowedCount not allowed matches found.';
+    } else {
+      messageIcon = Icons.help_outline;
+      messageColor = colorScheme.primary;
+      title = 'No catalog match yet';
+      subtitle = 'Suggest this food for review below.';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _LookupCountTile(
+                label: 'Allowed',
+                count: allowedCount,
+                icon: Icons.check_circle_outline,
+                color: Colors.green,
+                isActive: allowedCount > 0,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _LookupCountTile(
+                label: 'Not allowed',
+                count: notAllowedCount,
+                icon: Icons.block,
+                color: colorScheme.error,
+                isActive: notAllowedCount > 0,
+              ),
+            ),
+          ],
+        ),
+        if (showMessage) ...[
+          const SizedBox(height: 8),
+          _LookupMessage(
+            icon: messageIcon,
+            color: messageColor,
+            title: title,
+            subtitle: subtitle,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _LookupCountTile extends StatelessWidget {
+  const _LookupCountTile({
+    required this.label,
+    required this.count,
+    required this.icon,
+    required this.color,
+    required this.isActive,
+  });
+
+  final String label;
+  final int count;
+  final IconData icon;
+  final Color color;
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final tileColor = isActive
+        ? color.withValues(alpha: 0.10)
+        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.55);
+    final borderColor = isActive ? color : colorScheme.outlineVariant;
+    final foregroundColor = isActive ? color : colorScheme.onSurfaceVariant;
+
+    return Card(
+      color: tileColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: borderColor),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 58),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(icon, color: foregroundColor, size: 20),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$count',
+                style: textTheme.headlineSmall?.copyWith(
+                  color: foregroundColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LookupMessage extends StatelessWidget {
+  const _LookupMessage({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: color.withValues(alpha: 0.07),
+      child: ListTile(
+        dense: true,
+        leading: Icon(icon, color: color),
+        title: Text(title),
+        subtitle: Text(subtitle),
+      ),
+    );
+  }
+}
+
+class _SuggestionActions extends StatelessWidget {
+  const _SuggestionActions({
+    required this.canSuggest,
+    required this.isSuggesting,
+    required this.onSuggestAllowed,
+    required this.onSuggestNotAllowed,
+  });
+
+  final bool canSuggest;
+  final bool isSuggesting;
+  final VoidCallback onSuggestAllowed;
+  final VoidCallback onSuggestNotAllowed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Missing from the catalog?',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Send a suggestion only when the lookup does not find a clear match.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: canSuggest ? onSuggestAllowed : null,
+            icon: const Icon(Icons.check_circle_outline),
+            label: const Text('Suggest as allowed'),
+          ),
+        ),
+        const SizedBox(height: 6),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: canSuggest ? onSuggestNotAllowed : null,
+            icon: const Icon(Icons.block),
+            label: const Text('Suggest as not allowed'),
+          ),
+        ),
+        if (isSuggesting) ...[
+          const SizedBox(height: 8),
+          const LinearProgressIndicator(),
+        ],
+      ],
+    );
+  }
+}
+
 class _ResultSection extends StatelessWidget {
   const _ResultSection({
     required this.title,
-    required this.fallback,
     required this.items,
-    required this.hasSearched,
     required this.status,
     required this.onItemTap,
   });
 
   final String title;
-  final String fallback;
   final List<String> items;
-  final bool hasSearched;
   final _ResultStatus status;
   final ValueChanged<String> onItemTap;
 
@@ -274,27 +484,24 @@ class _ResultSection extends StatelessWidget {
         : Icons.block;
 
     if (items.isEmpty) {
-      return Card(
-        child: ListTile(
-          leading: Icon(icon, color: statusColor),
-          title: Text(hasSearched ? '$title 0' : title),
-          subtitle: fallback.isEmpty ? null : Text(fallback),
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '$title ${items.length}',
+          '$title (${items.length})',
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 6),
         ...items.map(
           (item) => Card(
+            margin: const EdgeInsets.symmetric(vertical: 4),
             color: containerColor,
             child: ListTile(
+              dense: true,
+              visualDensity: VisualDensity.compact,
               leading: Icon(icon, color: statusColor),
               title: Text(item),
               trailing: const Icon(Icons.copy, size: 18),
@@ -302,6 +509,7 @@ class _ResultSection extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 8),
       ],
     );
   }

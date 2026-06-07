@@ -14,6 +14,16 @@ void main() {
     expect(result.notAllowed, ['wheat']);
   });
 
+  test('SearchResult strips all suffix from food labels', () {
+    final result = SearchResult.fromJson({
+      'allowed': ['Mushrooms (All)', 'Beef (all) '],
+      'not_allowed': ['Seed Oil (ALL)'],
+    });
+
+    expect(result.allowed, ['Mushrooms', 'Beef']);
+    expect(result.notAllowed, ['Seed Oil']);
+  });
+
   test('SuggestFoodRequest matches backend DTO shape', () {
     const request = SuggestFoodRequest(inputText: 'rice', allowed: true);
 
