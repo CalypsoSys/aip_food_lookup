@@ -19,6 +19,7 @@ interface FoodState {
   categoryFoods: SearchResult;
   selectedCategoryKind: CategoryKind;
   selectedSubcategory: string;
+  lastSearchedQuery: string;
   recentSearches: string[];
   loadingSearch: boolean;
   loadingCategories: boolean;
@@ -41,6 +42,7 @@ export const useFoodStore = defineStore('food', {
     categoryFoods: { allowed: [], notAllowed: [] },
     selectedCategoryKind: 'Allowed',
     selectedSubcategory: '',
+    lastSearchedQuery: '',
     recentSearches: [],
     loadingSearch: false,
     loadingCategories: false,
@@ -56,15 +58,20 @@ export const useFoodStore = defineStore('food', {
   actions: {
     clearSearch() {
       this.query = '';
+      this.lastSearchedQuery = '';
       this.result = { allowed: [], notAllowed: [] };
       this.errorMessage = '';
       this.suggestionMessage = '';
+    },
+    clearRecentSearches() {
+      this.recentSearches = [];
     },
     async search() {
       const trimmed = this.query.trim();
       this.errorMessage = '';
       this.suggestionMessage = '';
       if (trimmed.length < 3) {
+        this.lastSearchedQuery = '';
         this.result = { allowed: [], notAllowed: [] };
         return;
       }
@@ -72,9 +79,11 @@ export const useFoodStore = defineStore('food', {
       this.loadingSearch = true;
       try {
         this.result = await searchFoods(trimmed, this.searchType);
+        this.lastSearchedQuery = trimmed;
         this.recentSearches = updatedRecentSearches(this.recentSearches, trimmed);
       } catch {
         this.errorMessage = 'Search failed. Check that the API is reachable.';
+        this.lastSearchedQuery = trimmed;
       } finally {
         this.loadingSearch = false;
       }
@@ -102,7 +111,7 @@ export const useFoodStore = defineStore('food', {
       try {
         this.categoryFoods = await loadSubcategory(kind, subcategory);
       } catch {
-        this.errorMessage = 'Could not load foods for this category.';
+        this.errorMessage = 'Could not load ingredients for this category.';
       } finally {
         this.loadingCategoryFoods = false;
       }
@@ -112,7 +121,7 @@ export const useFoodStore = defineStore('food', {
       this.errorMessage = '';
       this.suggestionMessage = '';
       if (trimmed.length < 3) {
-        this.errorMessage = 'Enter at least 3 characters before suggesting a food.';
+        this.errorMessage = 'Enter at least 3 characters before suggesting an ingredient.';
         return;
       }
 

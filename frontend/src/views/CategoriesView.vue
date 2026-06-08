@@ -60,7 +60,7 @@ function kindPath(kind: CategoryKind) {
       <div class="section-heading">
         <div>
           <h2 id="categories-title">Categories</h2>
-          <p>Browse allowed and not allowed foods by catalog group.</p>
+          <p>Browse allowed and not allowed ingredients by catalog group.</p>
         </div>
         <span v-if="store.loadingCategories" class="status-pill">Loading</span>
       </div>
@@ -102,8 +102,8 @@ function kindPath(kind: CategoryKind) {
           <p>
             {{
               routeKind
-                ? `${routeKind} foods in this category.`
-                : 'Choose a category to view matching foods.'
+                ? `${routeKind} ingredients in this category.`
+                : 'Choose a category to view matching ingredients.'
             }}
           </p>
         </div>
@@ -111,7 +111,7 @@ function kindPath(kind: CategoryKind) {
       </div>
 
       <label v-if="routeKind" class="field">
-        <span>Filter foods</span>
+        <span>Filter ingredients</span>
         <input v-model="filterText" type="search" placeholder="Filter this category" />
       </label>
 
@@ -120,9 +120,9 @@ function kindPath(kind: CategoryKind) {
         :title="store.selectedCategoryKind"
         :items="filteredFoods"
         :tone="store.selectedCategoryKind === 'Allowed' ? 'allowed' : 'not-allowed'"
-        empty-text="No foods matched this filter."
+        empty-text="No ingredients matched this filter."
       />
-      <p v-else class="empty-copy">Category foods will appear here.</p>
+      <p v-else class="empty-copy">Category ingredients will appear here.</p>
     </section>
   </div>
 </template>

@@ -7,7 +7,7 @@ import { RouterLink, RouterView } from 'vue-router';
     <header class="top-bar">
       <div>
         <p class="eyebrow">AIP Food Lookup</p>
-        <h1>Find food guidance quickly</h1>
+        <h1>Find ingredient guidance quickly</h1>
       </div>
       <nav class="top-nav" aria-label="Primary">
         <RouterLink to="/search">Search</RouterLink>

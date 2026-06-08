@@ -49,10 +49,21 @@ describe('foodStore', () => {
     await store.search();
 
     expect(store.result.allowed).toEqual(['Apples']);
+    expect(store.lastSearchedQuery).toBe('apple');
     expect(store.recentSearches).toEqual(['apple']);
   });
 
-  it('loads foods for a selected category', async () => {
+  it('clears recent searches', async () => {
+    const store = useFoodStore();
+    store.query = 'apple';
+    await store.search();
+
+    store.clearRecentSearches();
+
+    expect(store.recentSearches).toEqual([]);
+  });
+
+  it('loads ingredients for a selected category', async () => {
     const store = useFoodStore();
 
     await store.loadCategoryFoods('Allowed', 'Fruits');
