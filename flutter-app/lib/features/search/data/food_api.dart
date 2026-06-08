@@ -6,6 +6,8 @@ import 'local_food_catalog.dart';
 
 typedef LocalFoodCatalogLoader = Future<LocalFoodCatalog> Function();
 
+const _fallbackReadTimeout = Duration(milliseconds: 1200);
+
 class FoodApi {
   FoodApi({
     ApiClient? client,
@@ -31,6 +33,7 @@ class FoodApi {
           'key': text,
           'type': normalizeSearchType(searchType),
         },
+        timeout: _fallbackReadTimeout,
       );
       return SearchResult.fromJson(json);
     } catch (_) {
@@ -44,7 +47,10 @@ class FoodApi {
 
   Future<SearchResult> categories() async {
     try {
-      final json = await _client.getJson('/categories');
+      final json = await _client.getJson(
+        '/categories',
+        timeout: _fallbackReadTimeout,
+      );
       return SearchResult.fromJson(json);
     } catch (_) {
       return (await _loadFallbackCatalog()).categories();
@@ -59,6 +65,7 @@ class FoodApi {
           'cat': category,
           'sub': normalizeSubcategory(subcategory),
         },
+        timeout: _fallbackReadTimeout,
       );
       return SearchResult.fromJson(json);
     } catch (_) {

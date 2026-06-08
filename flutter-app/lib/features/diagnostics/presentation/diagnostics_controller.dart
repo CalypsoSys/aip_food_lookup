@@ -5,6 +5,8 @@ import '../../../core/networking/api_client.dart';
 
 typedef HealthCheck = Future<String> Function();
 
+const _diagnosticsTimeout = Duration(seconds: 2);
+
 class DiagnosticsState {
   const DiagnosticsState({
     required this.backendUrl,
@@ -42,7 +44,7 @@ class DiagnosticsController extends ValueNotifier<DiagnosticsState> {
               await ApiClient(
                 baseUrl: config.backendBaseUrl,
                 defaultHeaders: config.publicHeaders,
-              ).getJson('/categories');
+              ).getJson('/categories', timeout: _diagnosticsTimeout);
               return 'Backend responded.';
             }),
         super(DiagnosticsState(backendUrl: config.backendBaseUrl));

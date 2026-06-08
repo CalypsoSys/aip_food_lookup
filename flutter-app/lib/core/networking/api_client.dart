@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -7,50 +8,64 @@ class ApiClient {
   ApiClient({
     required String baseUrl,
     Map<String, String> defaultHeaders = const {},
+    Duration requestTimeout = const Duration(seconds: 5),
   })  : _baseUri = Uri.parse(baseUrl),
-        _defaultHeaders = Map.unmodifiable(defaultHeaders);
+        _defaultHeaders = Map.unmodifiable(defaultHeaders),
+        _requestTimeout = requestTimeout;
 
   final Uri _baseUri;
   final Map<String, String> _defaultHeaders;
+  final Duration _requestTimeout;
   final HttpClient _client = HttpClient();
 
   Future<Map<String, dynamic>> getJson(
     String path, {
     Map<String, String>? query,
+    Duration? timeout,
   }) async {
-    final uri = _buildUri(path, query);
-    final request = await _client.getUrl(uri);
-    _applyDefaultHeaders(request);
-    request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-    final response = await request.close();
-    return _decodeObjectResponse(response);
+    return _withTimeout(() async {
+      final uri = _buildUri(path, query);
+      final request = await _client.getUrl(uri);
+      _applyDefaultHeaders(request);
+      request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      final response = await request.close();
+      return _decodeObjectResponse(response);
+    }, timeout);
   }
 
-  Future<void> postJson(String path, Map<String, dynamic> body) async {
-    final uri = _buildUri(path);
-    final request = await _client.postUrl(uri);
-    _applyDefaultHeaders(request);
-    request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-    request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
-    request.write(jsonEncode(body));
-    final response = await request.close();
-    if (response.statusCode < 200 || response.statusCode >= 300) {
+  Future<void> postJson(
+    String path,
+    Map<String, dynamic> body, {
+    Duration? timeout,
+  }) async {
+    return _withTimeout(() async {
+      final uri = _buildUri(path);
+      final request = await _client.postUrl(uri);
+      _applyDefaultHeaders(request);
+      request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
+      request.write(jsonEncode(body));
+      final response = await request.close();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final text = await response.transform(utf8.decoder).join();
+        throw ApiException(text, statusCode: response.statusCode);
+      }
+    }, timeout);
+  }
+
+  Future<String> getText(String path, {Duration? timeout}) async {
+    return _withTimeout(() async {
+      final uri = _buildUri(path);
+      final request = await _client.getUrl(uri);
+      _applyDefaultHeaders(request);
+      request.headers.set(HttpHeaders.acceptHeader, 'text/plain');
+      final response = await request.close();
       final text = await response.transform(utf8.decoder).join();
-      throw ApiException(text, statusCode: response.statusCode);
-    }
-  }
-
-  Future<String> getText(String path) async {
-    final uri = _buildUri(path);
-    final request = await _client.getUrl(uri);
-    _applyDefaultHeaders(request);
-    request.headers.set(HttpHeaders.acceptHeader, 'text/plain');
-    final response = await request.close();
-    final text = await response.transform(utf8.decoder).join();
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException(text, statusCode: response.statusCode);
-    }
-    return text;
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException(text, statusCode: response.statusCode);
+      }
+      return text;
+    }, timeout);
   }
 
   Uri _buildUri(String path, [Map<String, String>? query]) {
@@ -76,6 +91,13 @@ class ApiClient {
       return decoded;
     }
     throw ApiException('Expected a JSON object response.');
+  }
+
+  Future<T> _withTimeout<T>(
+    Future<T> Function() operation,
+    Duration? timeout,
+  ) {
+    return operation().timeout(timeout ?? _requestTimeout);
   }
 }
 
