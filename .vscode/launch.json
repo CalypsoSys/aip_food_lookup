@@ -2,7 +2,29 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Dev: Flutter: Galaxy S23",
+      "name": "Dev: Go API",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/aip_food_lookup",
+      "cwd": "${workspaceFolder}/cmd/aip_food_lookup",
+      "env": {
+        "AIP_DATA_FOLDER": "${workspaceFolder}\\data",
+        "AIP_FEEDBACK_JSONL_PATH": "${workspaceFolder}\\data\\feedback.local.jsonl",
+        "AIP_ACCESS_LOG_PATH": "${workspaceFolder}\\cmd\\aip_food_lookup\\output\\access.log",
+        "AIP_ERROR_LOG_PATH": "${workspaceFolder}\\cmd\\aip_food_lookup\\output\\errors.log",
+        "AIP_SLACK_FEEDBACK_WEBHOOK_URL": "${env:AIP_SLACK_FEEDBACK_WEBHOOK_URL}",
+        "AIP__API__SlackFeedbackWebhookUrl": "${env:AIP__API__SlackFeedbackWebhookUrl}"
+      },
+      "preLaunchTask": "backend: stop port 8080",
+      "presentation": {
+        "group": "local",
+        "order": 10,
+        "hidden": true
+      }
+    },
+    {
+      "name": "_phone_dev_running_api_internal",
       "type": "dart",
       "request": "launch",
       "program": "${workspaceFolder}/flutter-app/lib/main.dart",
@@ -12,14 +34,15 @@
         "--dart-define-from-file",
         "${workspaceFolder}/.vscode/aip-local.env"
       ],
-      "preLaunchTask": "local: prepare phone launch",
+      "preLaunchTask": "backend: wait for ready",
       "presentation": {
         "group": "local",
-        "order": 1
+        "order": 11,
+        "hidden": true
       }
     },
     {
-      "name": "Prod: Flutter: Galaxy S23",
+      "name": "Prod API + Phone (S23)",
       "type": "dart",
       "request": "launch",
       "program": "${workspaceFolder}/flutter-app/lib/main.dart",
@@ -36,7 +59,7 @@
       "preLaunchTask": "flutter: pub get",
       "presentation": {
         "group": "local",
-        "order": 2
+        "order": 3
       }
     },
     {
@@ -48,20 +71,49 @@
       "preLaunchTask": "local: prepare web launch",
       "presentation": {
         "group": "local",
-        "order": 3,
+        "order": 5,
+        "hidden": true
+      }
+    },
+    {
+      "name": "_web_frontend_running_api_internal",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://127.0.0.1:5173",
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "preLaunchTask": "local: prepare web launch running API",
+      "presentation": {
+        "group": "local",
+        "order": 6,
         "hidden": true
       }
     }
   ],
   "compounds": [
     {
-      "name": "Local: frontend + API",
+      "name": "Local Dev: API + Phone (S23)",
       "configurations": [
-        "_web_frontend_internal"
+        "Dev: Go API",
+        "_phone_dev_running_api_internal"
       ],
+      "preLaunchTask": "backend: stop port 8080",
+      "stopAll": true,
       "presentation": {
         "group": "local",
         "order": 1
+      }
+    },
+    {
+      "name": "Local Dev: API + Website",
+      "configurations": [
+        "Dev: Go API",
+        "_web_frontend_running_api_internal"
+      ],
+      "preLaunchTask": "backend: stop port 8080",
+      "stopAll": true,
+      "presentation": {
+        "group": "local",
+        "order": 2
       }
     }
   ]

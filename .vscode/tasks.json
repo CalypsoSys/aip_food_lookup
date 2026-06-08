@@ -25,7 +25,7 @@
     {
       "label": "backend: go run",
       "type": "shell",
-      "command": "$env:AIP_DATA_FOLDER='${workspaceFolder}\\data'; try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/ | Out-Null; Write-Host 'Backend ready on http://127.0.0.1:8080'; Write-Host 'Using existing backend process. Stop that process if you need a fresh backend.'; while ($true) { Start-Sleep -Seconds 3600 } } catch { Write-Host 'Backend starting on http://127.0.0.1:8080'; Write-Host \"AIP_DATA_FOLDER=$env:AIP_DATA_FOLDER\"; go run . }",
+      "command": "$env:AIP_DATA_FOLDER='${workspaceFolder}\\data'; $env:AIP_FEEDBACK_JSONL_PATH='${workspaceFolder}\\data\\feedback.local.jsonl'; $env:AIP_ACCESS_LOG_PATH='${workspaceFolder}\\cmd\\aip_food_lookup\\output\\access.log'; $env:AIP_ERROR_LOG_PATH='${workspaceFolder}\\cmd\\aip_food_lookup\\output\\errors.log'; $slackConfigured = -not [string]::IsNullOrWhiteSpace($env:AIP_SLACK_FEEDBACK_WEBHOOK_URL) -or -not [string]::IsNullOrWhiteSpace($env:AIP__API__SlackFeedbackWebhookUrl); try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/ | Out-Null; Write-Host 'Backend ready on http://127.0.0.1:8080'; Write-Host 'Using existing backend process. Stop that process if you need a fresh backend.'; while ($true) { Start-Sleep -Seconds 3600 } } catch { Write-Host 'Backend starting on http://127.0.0.1:8080'; Write-Host ('AIP_DATA_FOLDER=' + $env:AIP_DATA_FOLDER); Write-Host ('AIP_FEEDBACK_JSONL_PATH=' + $env:AIP_FEEDBACK_JSONL_PATH); if ($slackConfigured) { Write-Host 'Slack feedback enabled for local backend.' } else { Write-Host 'Slack feedback disabled for local backend.' }; go run . }",
       "options": {
         "cwd": "${workspaceFolder}/cmd/aip_food_lookup",
         "shell": {
@@ -184,6 +184,16 @@
       "dependsOn": [
         "backend: stop port 8080",
         "backend: go run",
+        "backend: wait for ready",
+        "frontend: pnpm install",
+        "frontend: dev",
+        "frontend: wait for ready"
+      ],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "local: prepare web launch running API",
+      "dependsOn": [
         "backend: wait for ready",
         "frontend: pnpm install",
         "frontend: dev",
