@@ -97,7 +97,7 @@
         "_phone_dev_running_api_internal"
       ],
       "preLaunchTask": "backend: stop port 8080",
-      "stopAll": true,
+      "stopAll": false,
       "presentation": {
         "group": "local",
         "order": 1
@@ -110,7 +110,7 @@
         "_web_frontend_running_api_internal"
       ],
       "preLaunchTask": "backend: stop port 8080",
-      "stopAll": true,
+      "stopAll": false,
       "presentation": {
         "group": "local",
         "order": 2
