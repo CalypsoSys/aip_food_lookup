@@ -7,6 +7,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('starts with ingredient guidance and example chips',
+      (tester) async {
+    final controller = feature.SearchController(foodApi: _FakeFoodApi());
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(home: SearchScreen(controller: controller)),
+    );
+
+    expect(find.text('Search an ingredient'), findsOneWidget);
+    expect(
+      find.text(
+        'Best for single ingredients. For prepared foods, check the ingredient list one item at a time.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Apple'), findsOneWidget);
+    expect(find.text('Potato'), findsOneWidget);
+    expect(find.text('Coconut milk'), findsOneWidget);
+  });
+
   testWidgets('shows results before suggestion actions when matches exist',
       (tester) async {
     final controller = feature.SearchController(foodApi: _FakeFoodApi());
@@ -23,10 +44,10 @@ void main() {
 
     expect(find.text('Allowed'), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
-    expect(find.text('Allowed on AIP (1)'), findsOneWidget);
+    expect(find.text('Allowed ingredients (1)'), findsOneWidget);
     expect(find.text('Apples'), findsOneWidget);
     expect(find.text('Allowed match found'), findsNothing);
-    expect(find.text('Not seeing the food you meant?'), findsNothing);
+    expect(find.text('Not seeing the ingredient you meant?'), findsNothing);
     expect(find.text('Suggest as allowed'), findsNothing);
     expect(find.text('Suggest as not allowed'), findsNothing);
   });
@@ -46,16 +67,22 @@ void main() {
     );
 
     expect(find.text('Turmeric'), findsOneWidget);
-    expect(find.text('Not seeing the food you meant?'), findsOneWidget);
+    expect(find.text('Not seeing the ingredient you meant?'), findsOneWidget);
     expect(find.text('Suggest "turmeric powder"'), findsOneWidget);
     expect(find.text('Suggest as allowed'), findsNothing);
     expect(find.text('Suggest as not allowed'), findsNothing);
 
-    await tester.tap(find.text('Not seeing the food you meant?'));
+    await tester.tap(find.text('Not seeing the ingredient you meant?'));
     await tester.pump();
 
-    expect(find.widgetWithText(OutlinedButton, 'Allowed'), findsOneWidget);
-    expect(find.widgetWithText(OutlinedButton, 'Not allowed'), findsOneWidget);
+    expect(
+      find.widgetWithText(FilledButton, 'Suggest allowed'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(OutlinedButton, 'Suggest not allowed'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows explicit suggestion actions after no matches',
@@ -72,7 +99,13 @@ void main() {
       MaterialApp(home: SearchScreen(controller: controller)),
     );
 
-    expect(find.text('No catalog match yet'), findsOneWidget);
+    expect(find.text('Prepared foods vary by recipe'), findsOneWidget);
+    expect(
+      find.text(
+        'Search the ingredient list one item at a time, like cherry, wheat, sugar, potato, or oil.',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Missing from the catalog?'), findsOneWidget);
     expect(find.text('Suggest as allowed'), findsOneWidget);
     expect(find.text('Suggest as not allowed'), findsOneWidget);

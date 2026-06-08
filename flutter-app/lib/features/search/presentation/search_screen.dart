@@ -4,6 +4,14 @@ import 'package:flutter/services.dart';
 import '../models/search_result.dart';
 import 'search_controller.dart' as feature;
 
+const _ingredientExamples = [
+  'Apple',
+  'Potato',
+  'Egg',
+  'Rice',
+  'Coconut milk',
+];
+
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key, this.controller});
 
@@ -65,8 +73,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 TextField(
                   controller: _textController,
                   decoration: InputDecoration(
-                    labelText: 'Search food',
-                    hintText: 'Type a food to check the AIP catalog',
+                    labelText: 'Search an ingredient',
+                    hintText: 'Try apple, potato, rice, egg, coconut milk',
                     suffixIcon: state.query.isEmpty
                         ? null
                         : IconButton(
@@ -81,6 +89,21 @@ class _SearchScreenState extends State<SearchScreen> {
                   textInputAction: TextInputAction.search,
                   onChanged: _controller.updateQuery,
                 ),
+                const SizedBox(height: 6),
+                Text(
+                  'Best for single ingredients. For prepared foods, check the ingredient list one item at a time.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                if (query.isEmpty) ...[
+                  const SizedBox(height: 8),
+                  _IngredientExamples(
+                    examples: _ingredientExamples,
+                    onSelected: (example) {
+                      _textController.text = example;
+                      _controller.selectRecentSearch(example);
+                    },
+                  ),
+                ],
                 const SizedBox(height: 12),
                 _LookupSummary(state: state),
                 if (state.isLoading) ...[
@@ -89,13 +112,13 @@ class _SearchScreenState extends State<SearchScreen> {
                 ],
                 const SizedBox(height: 12),
                 _ResultSection(
-                  title: 'Allowed on AIP',
+                  title: 'Allowed ingredients',
                   items: state.result.allowed,
                   status: _ResultStatus.allowed,
                   onItemTap: _copyResult,
                 ),
                 _ResultSection(
-                  title: 'Not allowed on AIP',
+                  title: 'Not allowed ingredients',
                   items: state.result.notAllowed,
                   status: _ResultStatus.notAllowed,
                   onItemTap: _copyResult,
@@ -287,6 +310,36 @@ String _singularizeWord(String value) {
 
 enum _ResultStatus { allowed, notAllowed }
 
+class _IngredientExamples extends StatelessWidget {
+  const _IngredientExamples({
+    required this.examples,
+    required this.onSelected,
+  });
+
+  final List<String> examples;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: examples.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final example = examples[index];
+          return ActionChip(
+            label: Text(example),
+            avatar: const Icon(Icons.restaurant_menu, size: 18),
+            onPressed: () => onSelected(example),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _LookupSummary extends StatelessWidget {
   const _LookupSummary({required this.state});
 
@@ -297,8 +350,10 @@ class _LookupSummary extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final allowedCount = state.result.allowed.length;
     final notAllowedCount = state.result.notAllowed.length;
-    final hasMinimum = state.query.trim().length > 2;
+    final query = state.query.trim();
+    final hasMinimum = query.length > 2;
     final hasMatches = allowedCount > 0 || notAllowedCount > 0;
+    final isLikelyPreparedFood = query.contains(RegExp(r'\s+'));
 
     late final String title;
     late final String subtitle;
@@ -314,13 +369,13 @@ class _LookupSummary extends StatelessWidget {
     } else if (!hasMinimum) {
       messageIcon = Icons.search;
       messageColor = colorScheme.primary;
-      title = 'Search the AIP catalog';
+      title = 'Search the ingredient catalog';
       subtitle = 'Type at least 3 characters. Results appear automatically.';
     } else if (state.isLoading || !state.hasSearched) {
       messageIcon = Icons.manage_search;
       messageColor = colorScheme.primary;
       title = 'Checking the catalog';
-      subtitle = 'Looking for allowed and not allowed matches.';
+      subtitle = 'Looking for allowed and not allowed ingredients.';
     } else if (allowedCount > 0 && notAllowedCount == 0) {
       messageIcon = Icons.check_circle_outline;
       messageColor = Colors.green;
@@ -347,10 +402,16 @@ class _LookupSummary extends StatelessWidget {
       subtitle =
           '$allowedCount allowed and $notAllowedCount not allowed matches found.';
     } else {
-      messageIcon = Icons.help_outline;
+      messageIcon = isLikelyPreparedFood
+          ? Icons.receipt_long_outlined
+          : Icons.help_outline;
       messageColor = colorScheme.primary;
-      title = 'No catalog match yet';
-      subtitle = 'Suggest this food for review below.';
+      title = isLikelyPreparedFood
+          ? 'Prepared foods vary by recipe'
+          : 'No ingredient match yet';
+      subtitle = isLikelyPreparedFood
+          ? 'Search the ingredient list one item at a time, like cherry, wheat, sugar, potato, or oil.'
+          : 'Suggest this ingredient for review below.';
     }
 
     return Column(
@@ -412,47 +473,40 @@ class _LookupCountTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final tileColor = isActive
-        ? color.withValues(alpha: 0.10)
-        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.55);
-    final borderColor = isActive ? color : colorScheme.outlineVariant;
     final foregroundColor = isActive ? color : colorScheme.onSurfaceVariant;
 
-    return Card(
-      color: tileColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: borderColor),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: colorScheme.outlineVariant),
+        ),
       ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 58),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(icon, color: foregroundColor, size: 20),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, color: foregroundColor, size: 19),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.labelMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                '$count',
-                style: textTheme.headlineSmall?.copyWith(
-                  color: foregroundColor,
-                  fontWeight: FontWeight.w700,
-                ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '$count',
+              style: textTheme.titleMedium?.copyWith(
+                color: foregroundColor,
+                fontWeight: FontWeight.w700,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -509,13 +563,15 @@ class _SuggestionActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     if (!isExpanded) {
       return Card(
+        color: colorScheme.primaryContainer.withValues(alpha: 0.24),
         child: ListTile(
           dense: true,
           visualDensity: VisualDensity.compact,
-          leading: const Icon(Icons.add_comment_outlined),
-          title: const Text('Not seeing the food you meant?'),
+          leading: Icon(Icons.add_comment_outlined, color: colorScheme.primary),
+          title: const Text('Not seeing the ingredient you meant?'),
           subtitle: Text(
             'Suggest "$query"',
             maxLines: 1,
@@ -531,68 +587,83 @@ class _SuggestionActions extends StatelessWidget {
     final title =
         compactChoices ? 'Suggest "$query"' : 'Missing from the catalog?';
     final subtitle = compactChoices
-        ? 'Send this food for review if the exact item is missing.'
+        ? 'Send this ingredient for review if the exact item is missing.'
         : 'Send a suggestion only when the lookup does not find a clear match.';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
-        const SizedBox(height: 6),
-        Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-        const SizedBox(height: 8),
-        if (compactChoices)
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
+    return Card(
+      color: colorScheme.primaryContainer.withValues(alpha: 0.24),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.add_comment_outlined, color: colorScheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 10),
+            if (compactChoices)
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      onPressed: canSuggest ? onSuggestAllowed : null,
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('Suggest allowed'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: canSuggest ? onSuggestNotAllowed : null,
+                      icon: const Icon(Icons.block),
+                      label: const Text('Suggest not allowed'),
+                    ),
+                  ),
+                ],
+              )
+            else ...[
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
                   onPressed: canSuggest ? onSuggestAllowed : null,
                   icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('Allowed'),
+                  label: const Text('Suggest as allowed'),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
+              const SizedBox(height: 6),
+              SizedBox(
+                width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: canSuggest ? onSuggestNotAllowed : null,
                   icon: const Icon(Icons.block),
-                  label: const Text('Not allowed'),
+                  label: const Text('Suggest as not allowed'),
                 ),
               ),
             ],
-          )
-        else ...[
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: canSuggest ? onSuggestAllowed : null,
-              icon: const Icon(Icons.check_circle_outline),
-              label: const Text('Suggest as allowed'),
-            ),
-          ),
-          const SizedBox(height: 6),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: canSuggest ? onSuggestNotAllowed : null,
-              icon: const Icon(Icons.block),
-              label: const Text('Suggest as not allowed'),
-            ),
-          ),
-        ],
-        if (isSuggesting) ...[
-          const SizedBox(height: 8),
-          const LinearProgressIndicator(),
-        ],
-      ],
+            if (isSuggesting) ...[
+              const SizedBox(height: 8),
+              const LinearProgressIndicator(),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

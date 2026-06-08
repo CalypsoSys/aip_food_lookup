@@ -15,7 +15,7 @@ void main() {
               'assets/identity/adaptive_icon.png';
     });
 
-    expect(find.text('Search food'), findsOneWidget);
+    expect(find.text('Search an ingredient'), findsOneWidget);
     expect(logo, findsAtLeastNWidgets(1));
   });
 }
