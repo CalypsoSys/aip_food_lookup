@@ -29,40 +29,39 @@ class _AppRouterState extends State<AppRouter> {
 
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: screens),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.showAds && _selectedIndex == _searchIndex)
-            const SafeArea(
-              top: false,
-              bottom: false,
-              child: SizedBox(
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.showAds && _selectedIndex == _searchIndex)
+              const SizedBox(
                 height: 66,
                 child: Center(child: SearchAdBanner()),
               ),
+            NavigationBar(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) {
+                setState(() => _selectedIndex = index);
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.category_outlined),
+                  label: 'Categories',
+                ),
+                NavigationDestination(
+                  icon: _SearchNavLogo(isSelected: false),
+                  selectedIcon: _SearchNavLogo(isSelected: true),
+                  label: 'Search',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.info_outline),
+                  label: 'About',
+                ),
+              ],
             ),
-          NavigationBar(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (index) {
-              setState(() => _selectedIndex = index);
-            },
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.category_outlined),
-                label: 'Categories',
-              ),
-              NavigationDestination(
-                icon: _SearchNavLogo(isSelected: false),
-                selectedIcon: _SearchNavLogo(isSelected: true),
-                label: 'Search',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.info_outline),
-                label: 'About',
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
