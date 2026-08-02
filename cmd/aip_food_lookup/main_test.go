@@ -31,6 +31,33 @@ func TestProcessDirectoryLoadsCategoriesAndSearchData(t *testing.T) {
 	}
 }
 
+func TestCatalogClassifiesAlmondFlourAndMealAsNotAllowed(t *testing.T) {
+	testStore := newFoodStore("../../data")
+	if err := testStore.processDirectory("../../data"); err != nil {
+		t.Fatalf("processDirectory returned error: %v", err)
+	}
+
+	tests := []struct {
+		query string
+		want  string
+	}{
+		{query: "almond flour", want: "Almond Flour"},
+		{query: "almond meal", want: "Almond Meal"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.want, func(t *testing.T) {
+			result := testStore.match(tt.query, "searchbytext")
+			if !contains(result.NotAllowed, tt.want) {
+				t.Fatalf("expected %q in not allowed search results, got %#v", tt.want, result.NotAllowed)
+			}
+			if contains(result.Allowed, tt.want) {
+				t.Fatalf("did not expect %q in allowed search results, got %#v", tt.want, result.Allowed)
+			}
+		})
+	}
+}
+
 func TestSuggestHandlerWritesValidSuggestion(t *testing.T) {
 	tempDir := t.TempDir()
 	store = newFoodStore(tempDir)

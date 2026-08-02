@@ -82,4 +82,18 @@ void main() {
     expect(fruits.allowed, contains('Apples'));
     expect(fruits.allowed, isNot(contains('pples')));
   });
+
+  test('bundled catalog classifies almond flour and meal as not allowed',
+      () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+
+    final catalog = await LocalFoodCatalog.load();
+
+    for (final food in ['Almond Flour', 'Almond Meal']) {
+      final result = catalog.search(food, 'Search by Text');
+
+      expect(result.allowed, isNot(contains(food)));
+      expect(result.notAllowed, contains(food));
+    }
+  });
 }
