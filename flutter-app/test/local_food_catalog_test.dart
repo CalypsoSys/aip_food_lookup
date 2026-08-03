@@ -96,4 +96,17 @@ void main() {
       expect(result.notAllowed, contains(food));
     }
   });
+
+  test('bundled catalog classifies common Core foods as not allowed', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+
+    final catalog = await LocalFoodCatalog.load();
+
+    for (final food in ['French Fries', 'Big Mac', 'Porchetta', 'Rice']) {
+      final result = catalog.search(food, 'Search by Text');
+
+      expect(result.allowed, isNot(contains(food)));
+      expect(result.notAllowed, contains(food));
+    }
+  });
 }

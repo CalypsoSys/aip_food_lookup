@@ -56,6 +56,40 @@ func TestCatalogClassifiesAlmondFlourAndMealAsNotAllowed(t *testing.T) {
 			}
 		})
 	}
+
+	misspelled := testStore.match("grench fries", "")
+	if !contains(misspelled.NotAllowed, "French Fries") {
+		t.Fatalf("expected French Fries for misspelled search, got %#v", misspelled.NotAllowed)
+	}
+}
+
+func TestCatalogClassifiesCommonCoreFoodsAsNotAllowed(t *testing.T) {
+	testStore := newFoodStore("../../data")
+	if err := testStore.processDirectory("../../data"); err != nil {
+		t.Fatalf("processDirectory returned error: %v", err)
+	}
+
+	tests := []struct {
+		query string
+		want  string
+	}{
+		{query: "french fries", want: "French Fries"},
+		{query: "big mac", want: "Big Mac"},
+		{query: "porchetta", want: "Porchetta"},
+		{query: "rice", want: "Rice"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.want, func(t *testing.T) {
+			result := testStore.match(tt.query, "searchbytext")
+			if !contains(result.NotAllowed, tt.want) {
+				t.Fatalf("expected %q in not allowed search results, got %#v", tt.want, result.NotAllowed)
+			}
+			if contains(result.Allowed, tt.want) {
+				t.Fatalf("did not expect %q in allowed search results, got %#v", tt.want, result.Allowed)
+			}
+		})
+	}
 }
 
 func TestSuggestHandlerWritesValidSuggestion(t *testing.T) {
