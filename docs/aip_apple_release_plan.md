@@ -263,8 +263,10 @@ When implementation resumes, begin here:
 - [ ] Confirm `1.0.0+10` is the desired shared Android/iOS version.
 - [ ] Confirm the public support email or contact page.
 - [ ] Confirm whether the App Store Connect app record already exists.
-- [ ] Run the existing Flutter analysis and test baseline.
-- [ ] Generate and inspect the iOS Flutter target.
+- [x] Run the existing Flutter analysis and test baseline.
+- [x] Generate and inspect the iOS Flutter target.
+- [x] Configure the Runner Bundle ID, iOS 15 baseline, iPhone/iPad support,
+      display name, and identity assets.
 - [ ] Implement the platform-aware client and ads-disabled startup behavior.
 - [ ] Add the in-app privacy-policy link.
 - [ ] Configure the first Codemagic unsigned iOS compile.
