@@ -1,4 +1,5 @@
 import 'package:aip_food_lookup/app/config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -20,6 +21,26 @@ void main() {
     });
   });
 
+  test('platform defaults identify iOS separately from Android', () {
+    expect(
+      AppConfig.clientNameForPlatform(TargetPlatform.iOS),
+      'ios',
+    );
+    expect(
+      AppConfig.clientNameForPlatform(TargetPlatform.android),
+      'android',
+    );
+  });
+
+  test('default config headers use the current platform client name', () {
+    const config = AppConfig(backendBaseUrl: 'https://hashimojoe.com/api');
+
+    expect(
+      config.publicHeaders['X-AIP-Client'],
+      AppConfig.clientNameForPlatform(defaultTargetPlatform),
+    );
+  });
+
   test('publicHeaders omits blank values', () {
     const config = AppConfig(
       backendBaseUrl: 'https://hashimojoe.com/api',
@@ -34,7 +55,14 @@ void main() {
     expect(AppConfig.adsEnabled, isTrue);
     expect(
       AppConfig.adMobBannerAdUnitId,
-      'ca-app-pub-3940256099942544/6300978111',
+      anyOf(
+        AppConfig.androidAdMobBannerAdUnitId,
+        AppConfig.iosAdMobBannerAdUnitId,
+      ),
     );
+  });
+
+  test('privacy policy URL is available to the app', () {
+    expect(AppConfig.privacyPolicyUrl, startsWith('https://'));
   });
 }

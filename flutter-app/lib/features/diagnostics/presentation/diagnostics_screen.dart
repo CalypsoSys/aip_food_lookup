@@ -45,14 +45,15 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                 StatusCard(
                   title: 'Platform',
                   subtitle: defaultTargetPlatform.name,
-                  icon: Icons.phone_android,
+                  icon: Icons.devices_other_outlined,
                 ),
-                const StatusCard(
-                  title: 'Android URL tip',
-                  subtitle:
-                      'Emulators use 10.0.2.2 for the Windows host. Physical phones need this PC\'s LAN IP address.',
-                  icon: Icons.info_outline,
-                ),
+                if (defaultTargetPlatform == TargetPlatform.android)
+                  const StatusCard(
+                    title: 'Android URL tip',
+                    subtitle:
+                        'Emulators use 10.0.2.2 for the Windows host. Physical phones need this PC\'s LAN IP address.',
+                    icon: Icons.info_outline,
+                  ),
                 const SizedBox(height: 8),
                 FilledButton.icon(
                   onPressed:

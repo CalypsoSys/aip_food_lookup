@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'app/app.dart';
+import 'app/config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +17,8 @@ Future<void> main() async {
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
-  MobileAds.instance.initialize();
+  if (AppConfig.adsEnabled) {
+    await MobileAds.instance.initialize();
+  }
   runApp(const AipFoodLookupApp());
 }

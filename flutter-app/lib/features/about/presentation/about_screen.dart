@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../app/config.dart';
 import '../../../features/diagnostics/presentation/diagnostics_screen.dart';
 import '../../../features/feedback/presentation/feedback_screen.dart';
 import '../../../widgets/asset_header.dart';
@@ -44,6 +46,24 @@ class AboutScreen extends StatelessWidget {
               subtitle:
                   'This app is informational only and is not medical advice.',
               icon: Icons.health_and_safety_outlined,
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () async {
+                final launched = await launchUrl(
+                  Uri.parse(AppConfig.privacyPolicyUrl),
+                  mode: LaunchMode.externalApplication,
+                );
+                if (!launched && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Could not open the privacy policy.'),
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.privacy_tip_outlined),
+              label: const Text('Privacy policy'),
             ),
             const SizedBox(height: 8),
             FilledButton.icon(

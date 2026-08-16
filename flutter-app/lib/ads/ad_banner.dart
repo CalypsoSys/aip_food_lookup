@@ -7,11 +7,11 @@ class SearchAdBanner extends StatefulWidget {
   const SearchAdBanner({
     super.key,
     this.adsEnabled = AppConfig.adsEnabled,
-    this.adUnitId = AppConfig.adMobBannerAdUnitId,
+    this.adUnitId,
   });
 
   final bool adsEnabled;
-  final String adUnitId;
+  final String? adUnitId;
 
   @override
   State<SearchAdBanner> createState() => _SearchAdBannerState();
@@ -58,7 +58,7 @@ class _SearchAdBannerState extends State<SearchAdBanner> {
   }
 
   void _loadAd() {
-    final adUnitId = widget.adUnitId.trim();
+    final adUnitId = (widget.adUnitId ?? AppConfig.adMobBannerAdUnitId).trim();
     if (!widget.adsEnabled || adUnitId.isEmpty) {
       return;
     }

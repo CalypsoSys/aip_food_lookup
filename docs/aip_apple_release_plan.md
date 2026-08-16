@@ -45,9 +45,11 @@ release implementation begins.
 - The About screen includes an informational-only medical disclaimer.
 - The privacy policy is still a draft and has unresolved contact and effective
   date fields.
-- App configuration defaults the client name to `android`.
-- Google Mobile Ads is initialized unconditionally and currently uses Android
-  test configuration.
+- App configuration resolves `ios` and `android` client names by platform and
+  accepts build-time overrides.
+- Google Mobile Ads initialization is conditional, with platform-specific test
+  banner IDs and a Google iOS test App ID in the Runner plist.
+- The About screen exposes the privacy-policy URL through the system browser.
 - Existing store screenshots can guide the Apple listing, but Apple-device
   screenshots must be captured from the iOS build.
 
@@ -267,8 +269,8 @@ When implementation resumes, begin here:
 - [x] Generate and inspect the iOS Flutter target.
 - [x] Configure the Runner Bundle ID, iOS 15 baseline, iPhone/iPad support,
       display name, and identity assets.
-- [ ] Implement the platform-aware client and ads-disabled startup behavior.
-- [ ] Add the in-app privacy-policy link.
+- [x] Implement the platform-aware client and ads-disabled startup behavior.
+- [x] Add the in-app privacy-policy link.
 - [ ] Configure the first Codemagic unsigned iOS compile.
 - [ ] Configure Apple automatic signing only after compilation succeeds.
 - [ ] Upload the first ads-disabled internal TestFlight build.

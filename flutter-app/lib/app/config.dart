@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
+
 class AppConfig {
   const AppConfig({
     required this.backendBaseUrl,
-    this.clientName = clientNameFromDefine,
+    this.clientName,
     this.appVersion = appVersionFromDefine,
   });
 
@@ -14,7 +16,7 @@ class AppConfig {
 
   static const clientNameFromDefine = String.fromEnvironment(
     'AIP_CLIENT_NAME',
-    defaultValue: 'android',
+    defaultValue: '',
   );
 
   static const appVersionFromDefine = String.fromEnvironment(
@@ -27,21 +29,48 @@ class AppConfig {
     defaultValue: true,
   );
 
-  static const adMobBannerAdUnitId = String.fromEnvironment(
+  static const adMobBannerAdUnitIdFromDefine = String.fromEnvironment(
     'AIP_ADMOB_BANNER_AD_UNIT_ID',
-    defaultValue: 'ca-app-pub-3940256099942544/6300978111',
+    defaultValue: '',
   );
 
-  static const dev = AppConfig(backendBaseUrl: backendUrlFromDefine);
+  static const androidAdMobBannerAdUnitId =
+      'ca-app-pub-3940256099942544/6300978111';
+  static const iosAdMobBannerAdUnitId =
+      'ca-app-pub-3940256099942544/2934735716';
+
+  static const privacyPolicyUrl =
+      'https://hashimojoe.com/privacy/aip-food-lookup';
+
+  static const dev = AppConfig(
+    backendBaseUrl: backendUrlFromDefine,
+    clientName: clientNameFromDefine == '' ? null : clientNameFromDefine,
+  );
 
   final String backendBaseUrl;
-  final String clientName;
+  final String? clientName;
   final String appVersion;
+
+  static String clientNameForPlatform(TargetPlatform platform) {
+    return platform == TargetPlatform.iOS ? 'ios' : 'android';
+  }
+
+  static String get adMobBannerAdUnitId {
+    if (adMobBannerAdUnitIdFromDefine.trim().isNotEmpty) {
+      return adMobBannerAdUnitIdFromDefine;
+    }
+
+    return defaultTargetPlatform == TargetPlatform.iOS
+        ? iosAdMobBannerAdUnitId
+        : androidAdMobBannerAdUnitId;
+  }
 
   Map<String, String> get publicHeaders {
     final headers = <String, String>{};
-    if (clientName.trim().isNotEmpty) {
-      headers['X-AIP-Client'] = clientName.trim();
+    final resolvedClientName =
+        clientName?.trim() ?? clientNameForPlatform(defaultTargetPlatform);
+    if (resolvedClientName.isNotEmpty) {
+      headers['X-AIP-Client'] = resolvedClientName;
     }
     if (appVersion.trim().isNotEmpty) {
       headers['X-AIP-App-Version'] = appVersion.trim();
