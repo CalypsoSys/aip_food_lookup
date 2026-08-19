@@ -28,6 +28,25 @@ void main() {
     expect(find.text('Coconut milk'), findsOneWidget);
   });
 
+  testWidgets('supports dismissing the keyboard from search', (tester) async {
+    final controller = feature.SearchController(foodApi: _FakeFoodApi());
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(home: SearchScreen(controller: controller)),
+    );
+
+    final searchField = tester.widget<TextField>(find.byType(TextField).first);
+    final list = tester.widget<ListView>(find.byType(ListView).first);
+
+    expect(searchField.textInputAction, TextInputAction.search);
+    expect(searchField.onSubmitted, isNotNull);
+    expect(
+      list.keyboardDismissBehavior,
+      ScrollViewKeyboardDismissBehavior.onDrag,
+    );
+  });
+
   testWidgets('shows results before suggestion actions when matches exist',
       (tester) async {
     final controller = feature.SearchController(foodApi: _FakeFoodApi());

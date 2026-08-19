@@ -68,6 +68,7 @@ class _SearchScreenState extends State<SearchScreen> {
         return Scaffold(
           body: SafeArea(
             child: ListView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.all(12),
               children: [
                 TextField(
@@ -88,6 +89,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   textInputAction: TextInputAction.search,
                   onChanged: _controller.updateQuery,
+                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                 ),
                 const SizedBox(height: 6),
                 Text(
