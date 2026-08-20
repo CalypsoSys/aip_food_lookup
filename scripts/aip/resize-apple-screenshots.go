@@ -15,8 +15,28 @@ import (
 )
 
 func main() {
+	if len(os.Args) == 6 && os.Args[1] == "--pad" {
+		width, _ := strconv.Atoi(os.Args[2])
+		height, _ := strconv.Atoi(os.Args[3])
+		paths, err := filepath.Glob(os.Args[4])
+		if err != nil {
+			panic(err)
+		}
+		if err := os.MkdirAll(os.Args[5], 0755); err != nil {
+			panic(err)
+		}
+		for _, path := range paths {
+			output := filepath.Join(os.Args[5], filepath.Base(path))
+			if err := pad(path, output, width, height); err != nil {
+				panic(err)
+			}
+			fmt.Printf("created %s at %dx%d\n", output, width, height)
+		}
+		return
+	}
 	if len(os.Args) != 4 {
 		fmt.Fprintln(os.Stderr, "usage: resize-apple-screenshots <width> <height> <glob>")
+		fmt.Fprintln(os.Stderr, "   or: resize-apple-screenshots --pad <width> <height> <glob> <output-dir>")
 		os.Exit(2)
 	}
 	width, err := strconv.Atoi(os.Args[1])
@@ -37,6 +57,43 @@ func main() {
 		}
 		fmt.Printf("resized %s to %dx%d\n", path, width, height)
 	}
+}
+
+func pad(inputPath, outputPath string, width, height int) error {
+	input, err := os.Open(inputPath)
+	if err != nil {
+		return err
+	}
+	source, _, err := image.Decode(input)
+	input.Close()
+	if err != nil {
+		return err
+	}
+
+	canvas := image.NewRGBA(image.Rect(0, 0, width, height))
+	background := color.RGBA{R: 248, G: 244, B: 252, A: 255}
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			canvas.Set(x, y, background)
+		}
+	}
+	scale := float64(height) / float64(source.Bounds().Dy())
+	scaledWidth := int(float64(source.Bounds().Dx())*scale + 0.5)
+	left := (width - scaledWidth) / 2
+	for y := 0; y < height; y++ {
+		for x := 0; x < scaledWidth; x++ {
+			canvas.Set(left+x, y, bilinear(source, float64(x)/scale, float64(y)/scale))
+		}
+	}
+	file, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+	if err := writeRGBPNG(file, canvas); err != nil {
+		file.Close()
+		return err
+	}
+	return file.Close()
 }
 
 func resize(path string, width int, height int) error {
