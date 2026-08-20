@@ -2,6 +2,7 @@
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
 # Binaries for programs and plugins
+bin/
 *.exe
 *.exe~
 *.dll
@@ -28,6 +29,7 @@ data/suggested_allowed.txt
 data/suggested_not_allowed.txt
 data/feedback.jsonl
 output/
+.tmp/
 .vscode/aip-local.env
 .vscode/aip-api.env
 scripts/aip/config.local.yaml
