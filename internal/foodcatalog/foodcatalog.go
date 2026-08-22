@@ -153,31 +153,82 @@ func SpellingDistanceAllowed(query, candidate string) bool {
 
 func fuzzySoundMatch(query string, queryMetaphone godoublemetaphone.ShortDoubleMetaphone, food Food) bool {
 	for _, candidate := range append([]string{food.Name}, food.Aliases...) {
-		if spellingDistanceAllowed(query, candidate) {
-			return true
-		}
-		for _, token := range searchableTokens(candidate) {
-			if spellingDistanceAllowed(query, token) {
+		if len(searchableTokens(query)) > 1 {
+			if fuzzySoundMultiWordMatch(query, candidate) {
 				return true
 			}
-		}
-		if !metaphoneKeysMatchCandidate(queryMetaphone, candidate) {
 			continue
 		}
-		limit := spellingDistanceLimit(query)
-		if len(query) > 4 {
-			limit++
-		}
-		if levenshteinDistance(query, strings.ToLower(candidate)) <= limit {
+
+		if fuzzySoundCandidate(query, queryMetaphone, candidate) {
 			return true
-		}
-		for _, token := range searchableTokens(candidate) {
-			if levenshteinDistance(query, token) <= limit {
-				return true
-			}
 		}
 	}
 	return false
+}
+
+func fuzzySoundCandidate(query string, queryMetaphone godoublemetaphone.ShortDoubleMetaphone, candidate string) bool {
+	if spellingDistanceAllowed(query, candidate) {
+		return true
+	}
+	for _, token := range searchableTokens(candidate) {
+		if spellingDistanceAllowed(query, token) {
+			return true
+		}
+	}
+	if !metaphoneKeysMatchCandidate(queryMetaphone, candidate) {
+		return false
+	}
+	limit := spellingDistanceLimit(query)
+	if len(query) > 4 {
+		limit++
+	}
+	if levenshteinDistance(query, strings.ToLower(candidate)) <= limit {
+		return true
+	}
+	for _, token := range searchableTokens(candidate) {
+		if levenshteinDistance(query, token) <= limit {
+			return true
+		}
+	}
+	return false
+}
+
+func fuzzySoundMultiWordMatch(query, candidate string) bool {
+	queryTokens := searchableTokens(query)
+	candidateTokens := searchableTokens(candidate)
+	for _, queryToken := range queryTokens {
+		queryMetaphone := godoublemetaphone.NewShortDoubleMetaphone(queryToken)
+		matched := false
+		for _, candidateToken := range candidateTokens {
+			if fuzzySoundTokenMatch(queryToken, queryMetaphone, candidateToken) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			return false
+		}
+	}
+	return true
+}
+
+func fuzzySoundTokenMatch(query string, queryMetaphone godoublemetaphone.ShortDoubleMetaphone, candidate string) bool {
+	if spellingDistanceAllowed(query, candidate) {
+		return true
+	}
+	limit := spellingDistanceLimit(query)
+	if len(query) > 4 {
+		limit++
+	}
+	if levenshteinDistance(query, strings.ToLower(candidate)) <= limit {
+		return true
+	}
+	candidateMetaphone := godoublemetaphone.NewShortDoubleMetaphone(candidate)
+	if !metaphoneKeysMatchValues(queryMetaphone, candidateMetaphone) {
+		return false
+	}
+	return levenshteinDistance(query, strings.ToLower(candidate)) <= limit
 }
 
 func matchesText(query, name string, aliases []string) bool {
@@ -191,8 +242,12 @@ func matchesText(query, name string, aliases []string) bool {
 
 func metaphoneKeysMatchCandidate(query godoublemetaphone.ShortDoubleMetaphone, candidate string) bool {
 	metaphone := godoublemetaphone.NewShortDoubleMetaphone(candidate)
+	return metaphoneKeysMatchValues(query, metaphone)
+}
+
+func metaphoneKeysMatchValues(query, candidate godoublemetaphone.ShortDoubleMetaphone) bool {
 	queryKeys := validMetaphoneKeys(query.PrimaryShortKey(), query.AlternateShortKey())
-	candidateKeys := validMetaphoneKeys(metaphone.PrimaryShortKey(), metaphone.AlternateShortKey())
+	candidateKeys := validMetaphoneKeys(candidate.PrimaryShortKey(), candidate.AlternateShortKey())
 	for key := range queryKeys {
 		if candidateKeys[key] {
 			return true

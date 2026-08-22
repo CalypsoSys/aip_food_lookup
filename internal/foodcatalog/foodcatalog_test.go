@@ -53,3 +53,25 @@ func TestMatchAliasReturnsCanonicalName(t *testing.T) {
 		t.Fatalf("not allowed result = %#v", result.NotAllowed)
 	}
 }
+
+func TestMatchMultiWordSoundRequiresEachWord(t *testing.T) {
+	foods := []Food{
+		foodForTest("Coconut Milk"),
+		foodForTest("Coconut Oil"),
+	}
+
+	result := Match(foods, "coconut milk", "searchbysound")
+	if len(result.Allowed) != 1 || result.Allowed[0] != "Coconut Milk" {
+		t.Fatalf("allowed result = %#v", result.Allowed)
+	}
+}
+
+func foodForTest(name string) Food {
+	metaphone := godoublemetaphone.NewShortDoubleMetaphone(name)
+	return Food{
+		Allowed:                 true,
+		Name:                    name,
+		PrimaryShortMetaphone:   metaphone.PrimaryShortKey(),
+		AlternateShortMetaphone: metaphone.AlternateShortKey(),
+	}
+}
