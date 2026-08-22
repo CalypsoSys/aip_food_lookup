@@ -26,7 +26,7 @@ class AppConfig {
 
   static const adsEnabled = bool.fromEnvironment(
     'AIP_ADS_ENABLED',
-    defaultValue: true,
+    defaultValue: false,
   );
 
   static const adMobBannerAdUnitIdFromDefine = String.fromEnvironment(

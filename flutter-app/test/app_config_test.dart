@@ -52,7 +52,7 @@ void main() {
   });
 
   test('ad config defaults to Google test banner values', () {
-    expect(AppConfig.adsEnabled, isTrue);
+    expect(AppConfig.adsEnabled, isFalse);
     expect(
       AppConfig.adMobBannerAdUnitId,
       anyOf(
