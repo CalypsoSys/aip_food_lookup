@@ -8,13 +8,67 @@ import (
 	"strings"
 
 	"github.com/CalypsoSys/godoublemetaphone/pkg/godoublemetaphone"
+	"gopkg.in/yaml.v3"
 )
+
+type CatalogEntry struct {
+	Name    string   `yaml:"name"`
+	Aliases []string `yaml:"aliases,omitempty"`
+}
 
 type Food struct {
 	Allowed                 bool
 	Name                    string
+	Aliases                 []string
 	PrimaryShortMetaphone   uint16
 	AlternateShortMetaphone uint16
+}
+
+// ParseEntry reads a catalog line. The first tab-separated field is the
+// displayed name; remaining fields are search-only aliases.
+func ParseEntry(line string) (string, []string, bool) {
+	fields := strings.Split(line, "\t")
+	name := strings.TrimSpace(fields[0])
+	if name == "" {
+		return "", nil, false
+	}
+	aliases := make([]string, 0, len(fields)-1)
+	for _, field := range fields[1:] {
+		alias := strings.TrimSpace(field)
+		if alias != "" && !strings.EqualFold(alias, name) {
+			aliases = append(aliases, alias)
+		}
+	}
+	return name, aliases, true
+}
+
+func LoadEntries(path string) ([]CatalogEntry, error) {
+	if filepath.Ext(path) == ".yaml" || filepath.Ext(path) == ".yml" {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		var entries []CatalogEntry
+		if err := yaml.Unmarshal(data, &entries); err != nil {
+			return nil, err
+		}
+		return entries, nil
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	var entries []CatalogEntry
+	for scanner.Scan() {
+		name, aliases, ok := ParseEntry(scanner.Text())
+		if ok {
+			entries = append(entries, CatalogEntry{Name: name, Aliases: aliases})
+		}
+	}
+	return entries, scanner.Err()
 }
 
 type Result struct {
@@ -28,28 +82,28 @@ func Load(directory string) ([]Food, error) {
 		if walkErr != nil {
 			return walkErr
 		}
-		if info.IsDir() || filepath.Ext(path) != ".dat" {
+		if info.IsDir() || (filepath.Ext(path) != ".dat" && filepath.Ext(path) != ".yaml" && filepath.Ext(path) != ".yml") {
 			return nil
+		}
+		if filepath.Ext(path) == ".dat" {
+			if _, err := os.Stat(strings.TrimSuffix(path, ".dat") + ".yaml"); err == nil {
+				return nil
+			}
 		}
 		folder := filepath.Base(filepath.Dir(path))
 		if folder != "allowed" && folder != "not_allowed" {
 			return nil
 		}
-		file, err := os.Open(path)
+		entries, err := LoadEntries(path)
 		if err != nil {
 			return err
 		}
-		defer file.Close()
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			name := strings.TrimSpace(scanner.Text())
-			if name == "" {
-				continue
-			}
+		for _, entry := range entries {
+			name, aliases := entry.Name, entry.Aliases
 			metaphone := godoublemetaphone.NewShortDoubleMetaphone(name)
-			foods = append(foods, Food{Allowed: folder == "allowed", Name: name, PrimaryShortMetaphone: metaphone.PrimaryShortKey(), AlternateShortMetaphone: metaphone.AlternateShortKey()})
+			foods = append(foods, Food{Allowed: folder == "allowed", Name: name, Aliases: aliases, PrimaryShortMetaphone: metaphone.PrimaryShortKey(), AlternateShortMetaphone: metaphone.AlternateShortKey()})
 		}
-		return scanner.Err()
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -69,7 +123,7 @@ func Match(foods []Food, query string, typeSearch string) Result {
 	}
 	var allowed, notAllowed []string
 	for _, food := range foods {
-		if textSearch && strings.HasPrefix(strings.ToLower(food.Name), query) {
+		if textSearch && matchesText(query, food.Name, food.Aliases) {
 			if food.Allowed {
 				allowed = append(allowed, food.Name)
 			} else {
@@ -98,26 +152,49 @@ func SpellingDistanceAllowed(query, candidate string) bool {
 }
 
 func fuzzySoundMatch(query string, queryMetaphone godoublemetaphone.ShortDoubleMetaphone, food Food) bool {
-	if spellingDistanceAllowed(query, food.Name) {
-		return true
+	for _, candidate := range append([]string{food.Name}, food.Aliases...) {
+		if spellingDistanceAllowed(query, candidate) {
+			return true
+		}
+		for _, token := range searchableTokens(candidate) {
+			if spellingDistanceAllowed(query, token) {
+				return true
+			}
+		}
+		if !metaphoneKeysMatchCandidate(queryMetaphone, candidate) {
+			continue
+		}
+		limit := spellingDistanceLimit(query)
+		if len(query) > 4 {
+			limit++
+		}
+		if levenshteinDistance(query, strings.ToLower(candidate)) <= limit {
+			return true
+		}
+		for _, token := range searchableTokens(candidate) {
+			if levenshteinDistance(query, token) <= limit {
+				return true
+			}
+		}
 	}
-	for _, token := range searchableTokens(food.Name) {
-		if spellingDistanceAllowed(query, token) {
+	return false
+}
+
+func matchesText(query, name string, aliases []string) bool {
+	for _, candidate := range append([]string{name}, aliases...) {
+		if strings.HasPrefix(strings.ToLower(candidate), query) {
 			return true
 		}
 	}
-	if !metaphoneKeysMatch(queryMetaphone, food) {
-		return false
-	}
-	limit := spellingDistanceLimit(query)
-	if len(query) > 4 {
-		limit++
-	}
-	if levenshteinDistance(query, strings.ToLower(food.Name)) <= limit {
-		return true
-	}
-	for _, token := range searchableTokens(food.Name) {
-		if levenshteinDistance(query, token) <= limit {
+	return false
+}
+
+func metaphoneKeysMatchCandidate(query godoublemetaphone.ShortDoubleMetaphone, candidate string) bool {
+	metaphone := godoublemetaphone.NewShortDoubleMetaphone(candidate)
+	queryKeys := validMetaphoneKeys(query.PrimaryShortKey(), query.AlternateShortKey())
+	candidateKeys := validMetaphoneKeys(metaphone.PrimaryShortKey(), metaphone.AlternateShortKey())
+	for key := range queryKeys {
+		if candidateKeys[key] {
 			return true
 		}
 	}

@@ -175,7 +175,10 @@
                                   "Coconut Aminos",
                                   "Coconut Butter",
                                   "Coconut Flour",
-                                  "Coconut Milk (no emulsifiers)",
+                                  {
+                                      "name": "Coconut Milk (without gums, emulsifiers, or additives)",
+                                      "aliases": ["coconut milk", "pure coconut milk"]
+                                  },
                                   "Coconut Water Vinegar",
                                   "Cricket Flour",
                                   "Dried fruit",
@@ -313,7 +316,11 @@
                                       "Ice Cream",
                                       "Milk",
                                       "Sour Cream",
-                                      "Yogurt"
+                                      "Yogurt",
+                                      {
+                                          "name": "Chobani Yogurt - All",
+                                          "aliases": ["chobani yogurt", "chobani vanilla yogurt", "chobani low fat vanilla yogurt"]
+                                      }
                                   ],
                         "Fruits":  [
                                        "Cape Gooseberries",
@@ -513,7 +520,11 @@
                                       "Porchetta",
                                       "Protein Bars",
                                       "White Teas",
-                                      "Yerba Mate"
+                                      "Yerba Mate",
+                                      {
+                                          "name": "Coconut Milk (with gums, emulsifiers, or additives)",
+                                          "aliases": ["coconut milk with gums", "coconut milk with emulsifiers", "coconut milk with additives"]
+                                      }
                                   ],
                         "Seeds":  [
                                       "Flax",

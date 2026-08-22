@@ -1,0 +1,17 @@
+- name: Additives
+- name: Coconut Milk (with gums, emulsifiers, or additives)
+  aliases:
+    - coconut milk with gums
+    - coconut milk with emulsifiers
+    - coconut milk with additives
+- name: Alcohol
+- name: Big Mac
+- name: Chocolate
+- name: Coffee
+- name: Eggs
+- name: Energy Drinks
+- name: Oolong, Green, And
+- name: Porchetta
+- name: Protein Bars
+- name: White Teas
+- name: Yerba Mate

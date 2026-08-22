@@ -6,8 +6,8 @@ import '../models/search_result.dart';
 
 class LocalFoodCatalog {
   LocalFoodCatalog({
-    required Map<String, List<String>> allowedByCategory,
-    required Map<String, List<String>> notAllowedByCategory,
+    required Map<String, List<LocalFoodEntry>> allowedByCategory,
+    required Map<String, List<LocalFoodEntry>> notAllowedByCategory,
   })  : _allowedByCategory = _sortedCategoryMap(allowedByCategory),
         _notAllowedByCategory = _sortedCategoryMap(notAllowedByCategory);
 
@@ -32,8 +32,8 @@ class LocalFoodCatalog {
     return LocalFoodCatalog.fromJson(decoded);
   }
 
-  final Map<String, List<String>> _allowedByCategory;
-  final Map<String, List<String>> _notAllowedByCategory;
+  final Map<String, List<LocalFoodEntry>> _allowedByCategory;
+  final Map<String, List<LocalFoodEntry>> _notAllowedByCategory;
 
   SearchResult categories() {
     return SearchResult(
@@ -50,7 +50,9 @@ class LocalFoodCatalog {
       return const SearchResult(allowed: [], notAllowed: []);
     }
 
-    final items = List<String>.from(categoryMap[selectedCategory]!)
+    final items = categoryMap[selectedCategory]!
+        .map((entry) => entry.name)
+        .toList()
       ..sort(_compareFoodLabels);
     if (category == 'Allowed') {
       return SearchResult(allowed: items, notAllowed: const []);
@@ -70,37 +72,55 @@ class LocalFoodCatalog {
     );
   }
 
-  static Map<String, List<String>> _readCategoryMap(Object? value) {
+  static Map<String, List<LocalFoodEntry>> _readCategoryMap(Object? value) {
     if (value is! Map<String, dynamic>) {
       return const {};
     }
 
-    final output = <String, List<String>>{};
+    final output = <String, List<LocalFoodEntry>>{};
     for (final entry in value.entries) {
       final items = entry.value;
       if (items is! List) {
         continue;
       }
-      output[entry.key] = items.whereType<String>().toList();
+      output[entry.key] =
+          items.map(_readFoodEntry).whereType<LocalFoodEntry>().toList();
     }
     return output;
   }
 
-  static Map<String, List<String>> _sortedCategoryMap(
-    Map<String, List<String>> input,
+  static LocalFoodEntry? _readFoodEntry(Object? value) {
+    if (value is String) {
+      return LocalFoodEntry(name: value, aliases: const []);
+    }
+    if (value is Map<String, dynamic> && value['name'] is String) {
+      final aliases = value['aliases'];
+      return LocalFoodEntry(
+        name: value['name'] as String,
+        aliases: aliases is List
+            ? aliases.whereType<String>().toList()
+            : const [],
+      );
+    }
+    return null;
+  }
+
+  static Map<String, List<LocalFoodEntry>> _sortedCategoryMap(
+    Map<String, List<LocalFoodEntry>> input,
   ) {
     final entries = input.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
     return Map.unmodifiable({
       for (final entry in entries)
-        entry.key: List<String>.unmodifiable(
-          List<String>.from(entry.value)..sort(_compareFoodLabels),
+        entry.key: List<LocalFoodEntry>.unmodifiable(
+          List<LocalFoodEntry>.from(entry.value)
+            ..sort((a, b) => _compareFoodLabels(a.name, b.name)),
         ),
     });
   }
 
   static String? _findCategory(
-    Map<String, List<String>> categoryMap,
+    Map<String, List<LocalFoodEntry>> categoryMap,
     String subcategory,
   ) {
     final normalized = _normalizeSubcategory(subcategory);
@@ -113,14 +133,14 @@ class LocalFoodCatalog {
   }
 
   static List<String> _searchCategoryMap(
-    Map<String, List<String>> categoryMap,
+    Map<String, List<LocalFoodEntry>> categoryMap,
     String query,
   ) {
     final matches = <String>{};
     for (final items in categoryMap.values) {
       for (final food in items) {
         if (_matchesFoodQuery(query, food)) {
-          matches.add(cleanFoodLabel(food));
+          matches.add(food.name);
         }
       }
     }
@@ -128,27 +148,34 @@ class LocalFoodCatalog {
     return matches.toList()..sort(_compareFoodLabels);
   }
 
-  static bool _matchesFoodQuery(String query, String food) {
-    final candidate = _normalizeFoodKey(food);
-    if (candidate.isEmpty) {
-      return false;
-    }
-    if (candidate.startsWith(query)) {
-      return true;
-    }
+  static bool _matchesFoodQuery(String query, LocalFoodEntry food) {
+    for (final candidateText in [food.name, ...food.aliases]) {
+      final candidate = _normalizeFoodKey(candidateText);
+      if (candidate.isEmpty) {
+        continue;
+      }
+      if (candidate.startsWith(query)) {
+        return true;
+      }
 
-    final queryTokens = query.split(' ');
-    final candidateTokens = candidate.split(' ');
-    if (queryTokens.length > 1) {
-      return queryTokens.every(
-        (queryToken) => candidateTokens.any(
-          (candidateToken) => candidateToken.startsWith(queryToken),
-        ),
-      );
-    }
+      final queryTokens = query.split(' ');
+      final candidateTokens = candidate.split(' ');
+      if (queryTokens.length > 1 &&
+          queryTokens.every(
+            (queryToken) => candidateTokens.any(
+              (candidateToken) => candidateToken.startsWith(queryToken),
+            ),
+          )) {
+        return true;
+      }
 
-    return candidateTokens.any((token) => token.startsWith(query)) ||
-        (query.length >= 4 && candidate.contains(query));
+      if (queryTokens.length == 1 &&
+          (candidateTokens.any((token) => token.startsWith(query)) ||
+              (query.length >= 4 && candidate.contains(query)))) {
+        return true;
+      }
+    }
+    return false;
   }
 
   static String _normalizeFoodKey(String value) {
@@ -166,4 +193,11 @@ class LocalFoodCatalog {
   static int _compareFoodLabels(String a, String b) {
     return a.toLowerCase().compareTo(b.toLowerCase());
   }
+}
+
+class LocalFoodEntry {
+  const LocalFoodEntry({required this.name, required this.aliases});
+
+  final String name;
+  final List<String> aliases;
 }

@@ -12,7 +12,9 @@ The Go backend lives in `cmd/aip_food_lookup` and serves:
 - `GET /categories`
 - `GET /subcategory?cat=<Allowed|Not Allowed>&sub=<subcategory>`
 
-Food data is stored in `data/allowed` and `data/not_allowed`. Runtime suggestion and feedback files are ignored by git.
+Food data is stored in YAML files under `data/allowed` and `data/not_allowed`. Legacy `.dat` files remain as rollback-compatible catalog copies during the migration. Runtime suggestion and feedback files are ignored by git.
+
+When both formats exist, the API and search coverage tool use the YAML file and ignore the matching `.dat` file.
 Production feedback and suggestions post to Slack when `AIP__API__SlackFeedbackWebhookUrl` is configured. Feedback falls
 back to `data/feedback.jsonl` if Slack is unavailable; suggestions succeed when either the local suggestion file write or
 Slack delivery succeeds.

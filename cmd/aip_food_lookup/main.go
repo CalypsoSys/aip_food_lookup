@@ -57,6 +57,7 @@ type feedbackRequest struct {
 type apiFood struct {
 	allowed                 bool
 	name                    string
+	aliases                 []string
 	primaryShortMetaphone   uint16
 	alternateShortMetaphone uint16
 	category                string
@@ -337,7 +338,7 @@ func commonResponse(w http.ResponseWriter, response responseData) {
 func (s *foodStore) match(name string, typeSearch string) responseData {
 	foods := make([]foodcatalog.Food, 0, len(s.nameFoods))
 	for _, food := range s.nameFoods {
-		foods = append(foods, foodcatalog.Food{Allowed: food.allowed, Name: food.name, PrimaryShortMetaphone: food.primaryShortMetaphone, AlternateShortMetaphone: food.alternateShortMetaphone})
+		foods = append(foods, foodcatalog.Food{Allowed: food.allowed, Name: food.name, Aliases: food.aliases, PrimaryShortMetaphone: food.primaryShortMetaphone, AlternateShortMetaphone: food.alternateShortMetaphone})
 	}
 	result := foodcatalog.Match(foods, name, typeSearch)
 	return responseData{Allowed: result.Allowed, NotAllowed: result.NotAllowed}
@@ -431,14 +432,8 @@ func getFileNameWithoutExtension(filePath string) string {
 	return strings.TrimSuffix(base, filepath.Ext(base))
 }
 
-// processFile loads one .dat category file into the in-memory food index.
+// processFile loads one catalog category file into the in-memory food index.
 func (s *foodStore) processFile(filePath string) error {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
 	allowedFolder := getParentFolder(filePath)
 	category := getFileNameWithoutExtension(filePath)
 
@@ -450,29 +445,30 @@ func (s *foodStore) processFile(filePath string) error {
 		return errors.New("must be allowed or not_allowed")
 	}
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
-			continue
-		}
+	entries, err := foodcatalog.LoadEntries(filePath)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		name, aliases := entry.Name, entry.Aliases
 
-		nameLower := strings.ToLower(line)
+		nameLower := strings.ToLower(name)
 		if _, exists := s.nameFoods[nameLower]; exists {
 			continue
 		}
 
-		sdm := godoublemetaphone.NewShortDoubleMetaphone(line)
+		sdm := godoublemetaphone.NewShortDoubleMetaphone(name)
 		s.nameFoods[nameLower] = &apiFood{
 			allowed:                 allowedFolder == "allowed",
-			name:                    line,
+			name:                    name,
+			aliases:                 aliases,
 			primaryShortMetaphone:   sdm.PrimaryShortKey(),
 			alternateShortMetaphone: sdm.AlternateShortKey(),
 			category:                category,
 		}
 	}
 
-	return scanner.Err()
+	return nil
 }
 
 // processDirectory walks the configured data folder and loads all food data.
@@ -482,7 +478,12 @@ func (s *foodStore) processDirectory(directoryPath string) error {
 			return err
 		}
 
-		if !info.IsDir() && filepath.Ext(p) == ".dat" {
+		if !info.IsDir() && (filepath.Ext(p) == ".dat" || filepath.Ext(p) == ".yaml") {
+			if filepath.Ext(p) == ".dat" {
+				if _, statErr := os.Stat(strings.TrimSuffix(p, ".dat") + ".yaml"); statErr == nil {
+					return nil
+				}
+			}
 			return s.processFile(p)
 		}
 

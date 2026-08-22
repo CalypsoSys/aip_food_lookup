@@ -1,0 +1,15 @@
+- name: Butter
+- name: Cheese
+- name: Cream
+- name: Dairy Kefir
+- name: Frozen Yogurt
+- name: Ghee
+- name: Ice Cream
+- name: Milk
+- name: Sour Cream
+- name: Yogurt
+- name: Chobani Yogurt - All
+  aliases:
+    - chobani yogurt
+    - chobani vanilla yogurt
+    - chobani low fat vanilla yogurt

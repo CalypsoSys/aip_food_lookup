@@ -51,6 +51,24 @@ void main() {
     expect(result.notAllowed, isEmpty);
   });
 
+  test('matches aliases but returns only the canonical food name', () {
+    final catalog = LocalFoodCatalog.fromJson({
+      'allowed': {},
+      'not_allowed': {
+        'Dairy': [
+          {
+            'name': 'Chobani Yogurt - All',
+            'aliases': ['chobani vanilla yogurt'],
+          },
+        ],
+      },
+    });
+
+    final result = catalog.search('chobani vanilla yogurt', 'Search by Text');
+
+    expect(result.notAllowed, ['Chobani Yogurt - All']);
+  });
+
   test('loads foods for route-normalized subcategories', () {
     final catalog = LocalFoodCatalog.fromJson({
       'allowed': {
